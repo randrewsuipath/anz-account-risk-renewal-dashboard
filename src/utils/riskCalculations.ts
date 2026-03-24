@@ -4,27 +4,17 @@ const UTILIZATION_THRESHOLDS = {
   HIGH_RISK: 0.4,
   MEDIUM_RISK: 0.7,
 };
-const ROBOT_UTILIZATION_THRESHOLDS = {
-  HIGH_RISK: 0.2,
-  MEDIUM_RISK: 0.35,
-  LOW_RISK: 0.5,
-};
 const EXPIRY_THRESHOLDS = {
   HIGH_RISK: 90,
   MEDIUM_RISK: 180,
 };
 const ROBOT_CAPACITY = {
+  HOURS_24_7: 24 * 7 * 30,
   HOURS_BUSINESS: 8 * 5 * 4,
 };
 export function calculateUtilizationRisk(utilization: number): RiskLevel {
   if (utilization < UTILIZATION_THRESHOLDS.HIGH_RISK) return 'high';
   if (utilization < UTILIZATION_THRESHOLDS.MEDIUM_RISK) return 'medium';
-  return 'low';
-}
-export function calculateRobotUtilizationRisk(utilization: number): RiskLevel {
-  if (utilization < ROBOT_UTILIZATION_THRESHOLDS.HIGH_RISK) return 'high';
-  if (utilization < ROBOT_UTILIZATION_THRESHOLDS.MEDIUM_RISK) return 'medium';
-  if (utilization < ROBOT_UTILIZATION_THRESHOLDS.LOW_RISK) return 'low';
   return 'low';
 }
 export function calculateExpiryRisk(expiryDate: string): { risk: RiskLevel; daysUntil: number } {
@@ -66,15 +56,20 @@ export function calculateRobotUtilization(
   expiryDate: string
 ): RobotUtilization | null {
   if (robots <= 0) return null;
+  const capacity24x7 = robots * ROBOT_CAPACITY.HOURS_24_7;
   const capacityBusiness = robots * ROBOT_CAPACITY.HOURS_BUSINESS;
+  const utilization24x7 = monthlyHoursConsumed / capacity24x7;
   const utilizationBusiness = monthlyHoursConsumed / capacityBusiness;
-  const utilizationRiskBusiness = calculateRobotUtilizationRisk(utilizationBusiness);
+  const utilizationRisk24x7 = calculateUtilizationRisk(utilization24x7);
+  const utilizationRiskBusiness = calculateUtilizationRisk(utilizationBusiness);
   const { risk: expiryRisk, daysUntil } = calculateExpiryRisk(expiryDate);
-  const overallRisk = getWorstRisk([utilizationRiskBusiness, expiryRisk]);
+  const overallRisk = getWorstRisk([utilizationRisk24x7, utilizationRiskBusiness, expiryRisk]);
   return {
     robots,
     monthlyHoursConsumed,
+    utilization24x7,
     utilizationBusiness,
+    utilizationRisk24x7,
     utilizationRiskBusiness,
     expiryDate,
     expiryRisk,
@@ -131,7 +126,6 @@ export function calculateAccountRiskProfile(account: AccountData): AccountRiskPr
     accountId: account.accountId,
     accountName: account.accountName,
     csm: account.csm,
-    accountDirector: account.accountDirector,
     robots: robots || undefined,
     agenticUnits: agenticUnits || undefined,
     aiUnits: aiUnits || undefined,

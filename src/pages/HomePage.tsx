@@ -1,148 +1,320 @@
-// Home page of the app, Currently a demo page for demonstration.
-// Please rewrite this file to implement your own logic. Do not replace or delete it, simply rewrite this HomePage.tsx file.
-import { useEffect } from 'react'
-import { Sparkles } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { ThemeToggle } from '@/components/ThemeToggle'
-import { Toaster, toast } from '@/components/ui/sonner'
-import { create } from 'zustand'
-import { useShallow } from 'zustand/react/shallow'
-import { AppLayout } from '@/components/layout/AppLayout'
-
-// Timer store: independent slice with a clear, minimal API, for demonstration
-type TimerState = {
-  isRunning: boolean;
-  elapsedMs: number;
-  start: () => void;
-  pause: () => void;
-  reset: () => void;
-  tick: (deltaMs: number) => void;
-}
-
-const useTimerStore = create<TimerState>((set) => ({
-  isRunning: false,
-  elapsedMs: 0,
-  start: () => set({ isRunning: true }),
-  pause: () => set({ isRunning: false }),
-  reset: () => set({ elapsedMs: 0, isRunning: false }),
-  tick: (deltaMs) => set((s) => ({ elapsedMs: s.elapsedMs + deltaMs })),
-}))
-
-// Counter store: separate slice to showcase multiple stores without coupling
-type CounterState = {
-  count: number;
-  inc: () => void;
-  reset: () => void;
-}
-
-const useCounterStore = create<CounterState>((set) => ({
-  count: 0,
-  inc: () => set((s) => ({ count: s.count + 1 })),
-  reset: () => set({ count: 0 }),
-}))
-
-function formatDuration(ms: number): string {
-  const total = Math.max(0, Math.floor(ms / 1000))
-  const m = Math.floor(total / 60)
-  const s = total % 60
-  return `${m}:${s.toString().padStart(2, '0')}`
-}
-
+import React, { useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { TrendingDown, AlertTriangle, Calendar, Activity } from 'lucide-react';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { AppLayout } from '@/components/layout/AppLayout';
+import accountsData from '../data/accounts.json';
+import { calculateAccountRiskProfile, getRiskColor } from '../utils/riskCalculations';
+import type { AccountData, RiskLevel, FilterState } from '../types/account';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+const RISK_COLORS = {
+  high: '#dc2626',
+  medium: '#ca8a04',
+  low: '#16a34a',
+};
 export function HomePage() {
-  // Select only what is needed to avoid unnecessary re-renders
-  const { isRunning, elapsedMs } = useTimerStore(
-    useShallow((s) => ({ isRunning: s.isRunning, elapsedMs: s.elapsedMs })),
-  )
-  const start = useTimerStore((s) => s.start)
-  const pause = useTimerStore((s) => s.pause)
-  const resetTimer = useTimerStore((s) => s.reset)
-  const count = useCounterStore((s) => s.count)
-  const inc = useCounterStore((s) => s.inc)
-  const resetCount = useCounterStore((s) => s.reset)
-
-  // Drive the timer only while running; avoid update-depth issues with a scoped RAF
-  useEffect(() => {
-    if (!isRunning) return
-    let raf = 0
-    let last = performance.now()
-    const loop = () => {
-      const now = performance.now()
-      const delta = now - last
-      last = now
-      // Read store API directly to keep effect deps minimal and stable
-      useTimerStore.getState().tick(delta)
-      raf = requestAnimationFrame(loop)
-    }
-    raf = requestAnimationFrame(loop)
-    return () => cancelAnimationFrame(raf)
-  }, [isRunning])
-
-  const onPleaseWait = () => {
-    inc()
-    if (!isRunning) {
-      start()
-      toast.success('Building your app…', {
-        description: 'Hang tight, we\'re setting everything up.',
+  const [filters, setFilters] = useState<FilterState>({
+    csm: 'all',
+    riskType: 'all',
+    expiryWindow: 'all',
+    accountName: '',
+    unitType: 'all',
+  });
+  const accounts = useMemo(() => accountsData as AccountData[], []);
+  const riskProfiles = useMemo(() => {
+    return accounts.map(calculateAccountRiskProfile);
+  }, [accounts]);
+  const filteredProfiles = useMemo(() => {
+    return riskProfiles.filter(profile => {
+      if (filters.csm !== 'all' && profile.csm !== filters.csm) return false;
+      if (filters.riskType !== 'all' && profile.overallRisk !== filters.riskType) return false;
+      if (filters.accountName && !profile.accountName.toLowerCase().includes(filters.accountName.toLowerCase())) return false;
+      if (filters.expiryWindow !== 'all') {
+        const hasExpiringUnit = [
+          profile.robots,
+          profile.agenticUnits,
+          profile.aiUnits,
+          profile.platformUnits,
+          profile.duUnits,
+        ].some(unit => unit && unit.daysUntilExpiry <= filters.expiryWindow);
+        if (!hasExpiringUnit) return false;
+      }
+      return true;
+    });
+  }, [riskProfiles, filters]);
+  const kpis = useMemo(() => {
+    const totalAccounts = riskProfiles.length;
+    const atRisk = riskProfiles.filter(p => p.overallRisk === 'high' || p.overallRisk === 'medium').length;
+    const expiringSoon = riskProfiles.filter(p => {
+      return [p.robots, p.agenticUnits, p.aiUnits, p.platformUnits, p.duUnits]
+        .some(u => u && u.daysUntilExpiry <= 90);
+    }).length;
+    const robotRisk = riskProfiles.filter(p => p.robots && (p.robots.overallRisk === 'high' || p.robots.overallRisk === 'medium')).length;
+    const agenticRisk = riskProfiles.filter(p => p.agenticUnits && (p.agenticUnits.overallRisk === 'high' || p.agenticUnits.overallRisk === 'medium')).length;
+    const aiRisk = riskProfiles.filter(p => p.aiUnits && (p.aiUnits.overallRisk === 'high' || p.aiUnits.overallRisk === 'medium')).length;
+    const platformRisk = riskProfiles.filter(p => p.platformUnits && (p.platformUnits.overallRisk === 'high' || p.platformUnits.overallRisk === 'medium')).length;
+    const duRisk = riskProfiles.filter(p => p.duUnits && (p.duUnits.overallRisk === 'high' || p.duUnits.overallRisk === 'medium')).length;
+    return {
+      totalAccounts,
+      atRisk,
+      expiringSoon,
+      robotRisk,
+      agenticRisk,
+      aiRisk,
+      platformRisk,
+      duRisk,
+    };
+  }, [riskProfiles]);
+  const riskDistributionData = useMemo(() => {
+    const highRisk = riskProfiles.filter(p => p.overallRisk === 'high').length;
+    const mediumRisk = riskProfiles.filter(p => p.overallRisk === 'medium').length;
+    const lowRisk = riskProfiles.filter(p => p.overallRisk === 'low').length;
+    return [
+      { name: 'High Risk', value: highRisk, color: RISK_COLORS.high },
+      { name: 'Medium Risk', value: mediumRisk, color: RISK_COLORS.medium },
+      { name: 'Low Risk', value: lowRisk, color: RISK_COLORS.low },
+    ];
+  }, [riskProfiles]);
+  const unitRiskData = useMemo(() => {
+    return [
+      { name: 'Robots', risk: kpis.robotRisk },
+      { name: 'Agentic', risk: kpis.agenticRisk },
+      { name: 'AI Units', risk: kpis.aiRisk },
+      { name: 'Platform', risk: kpis.platformRisk },
+      { name: 'DU Units', risk: kpis.duRisk },
+    ];
+  }, [kpis]);
+  const topRiskAccounts = useMemo(() => {
+    return [...filteredProfiles]
+      .filter(p => p.overallRisk === 'high' || p.overallRisk === 'medium')
+      .sort((a, b) => {
+        if (a.overallRisk === 'high' && b.overallRisk !== 'high') return -1;
+        if (a.overallRisk !== 'high' && b.overallRisk === 'high') return 1;
+        return 0;
       })
-    } else {
-      pause()
-      toast.info('Taking a short pause', {
-        description: 'We\'ll continue shortly.',
-      })
-    }
-  }
-
-  const formatted = formatDuration(elapsedMs)
-
+      .slice(0, 10);
+  }, [filteredProfiles]);
+  const uniqueCSMs = useMemo(() => {
+    return Array.from(new Set(accounts.map(a => a.csm))).sort();
+  }, [accounts]);
   return (
-    <AppLayout>
-      <div className="min-h-screen flex flex-col items-center justify-center bg-background text-foreground p-4 overflow-hidden relative">
-        <ThemeToggle />
-        <div className="absolute inset-0 bg-gradient-rainbow opacity-10 dark:opacity-20 pointer-events-none" />
-        <div className="text-center space-y-8 relative z-10 animate-fade-in">
-          <div className="flex justify-center">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-primary flex items-center justify-center shadow-primary floating">
-              <Sparkles className="w-8 h-8 text-white rotating" />
-            </div>
-          </div>
-          <h1 className="text-5xl md:text-7xl font-display font-bold text-balance leading-tight">
-            Creating your <span className="text-gradient">app</span>
-          </h1>
-          <p className="text-lg md:text-xl text-muted-foreground max-w-xl mx-auto text-pretty">
-            Your application would be ready soon.
-          </p>
-          <div className="flex justify-center gap-4">
-            <Button 
-              size="lg"
-              onClick={onPleaseWait}
-              className="btn-gradient px-8 py-4 text-lg font-semibold hover:-translate-y-0.5 transition-all duration-200"
-              aria-live="polite"
-            >
-              Please Wait
-            </Button>
-          </div>
-          <div className="flex items-center justify-center gap-6 text-sm text-muted-foreground">
-            <div>
-              Time elapsed: <span className="font-medium tabular-nums text-foreground">{formatted}</span>
-            </div>
-            <div>
-              Coins: <span className="font-medium tabular-nums text-foreground">{count}</span>
-            </div>
-          </div>
-          <div className="flex justify-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => { resetTimer(); resetCount(); toast('Reset complete') }}>
-              Reset
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => { inc(); toast('Coin added') }}>
-              Add Coin
-            </Button>
+    <AppLayout container>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold text-gray-900">ANZ Account Risk Dashboard</h1>
+            <p className="text-sm text-gray-500 mt-1">Executive overview of license consumption and renewal risk</p>
           </div>
         </div>
-        <footer className="absolute bottom-8 text-center text-muted-foreground/80">
-          <p>Powered by Cloudflare</p>
-        </footer>
-        <Toaster richColors closeButton />
+        <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">CSM</label>
+              <Select value={filters.csm} onValueChange={(value) => setFilters(prev => ({ ...prev, csm: value }))}>
+                <SelectTrigger className="bg-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All CSMs</SelectItem>
+                  {uniqueCSMs.map(csm => (
+                    <SelectItem key={csm} value={csm}>{csm}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Risk Level</label>
+              <Select value={filters.riskType} onValueChange={(value) => setFilters(prev => ({ ...prev, riskType: value as RiskLevel | 'all' }))}>
+                <SelectTrigger className="bg-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Risks</SelectItem>
+                  <SelectItem value="high">High Risk</SelectItem>
+                  <SelectItem value="medium">Medium Risk</SelectItem>
+                  <SelectItem value="low">Low Risk</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Expiry Window</label>
+              <Select value={String(filters.expiryWindow)} onValueChange={(value) => setFilters(prev => ({ ...prev, expiryWindow: value === 'all' ? 'all' : Number(value) }))}>
+                <SelectTrigger className="bg-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Dates</SelectItem>
+                  <SelectItem value="30">30 Days</SelectItem>
+                  <SelectItem value="60">60 Days</SelectItem>
+                  <SelectItem value="90">90 Days</SelectItem>
+                  <SelectItem value="180">180 Days</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Account Name</label>
+              <Input
+                placeholder="Search accounts..."
+                value={filters.accountName}
+                onChange={(e) => setFilters(prev => ({ ...prev, accountName: e.target.value }))}
+                className="bg-white"
+              />
+            </div>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <Card className="p-4 border border-gray-200">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <Activity className="w-5 h-5 text-blue-600" />
+              </div>
+              <div>
+                <p className="text-xs text-gray-500">Total Accounts</p>
+                <p className="text-3xl font-bold text-gray-900">{kpis.totalAccounts}</p>
+              </div>
+            </div>
+          </Card>
+          <Card className="p-4 border border-gray-200">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-red-100 rounded-lg">
+                <AlertTriangle className="w-5 h-5 text-red-600" />
+              </div>
+              <div>
+                <p className="text-xs text-gray-500">Accounts at Risk</p>
+                <p className="text-3xl font-bold text-gray-900">{kpis.atRisk}</p>
+              </div>
+            </div>
+          </Card>
+          <Card className="p-4 border border-gray-200">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-yellow-100 rounded-lg">
+                <Calendar className="w-5 h-5 text-yellow-600" />
+              </div>
+              <div>
+                <p className="text-xs text-gray-500">Expiring Soon</p>
+                <p className="text-3xl font-bold text-gray-900">{kpis.expiringSoon}</p>
+              </div>
+            </div>
+          </Card>
+          <Card className="p-4 border border-gray-200">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-orange-100 rounded-lg">
+                <TrendingDown className="w-5 h-5 text-orange-600" />
+              </div>
+              <div>
+                <p className="text-xs text-gray-500">Robot Risk</p>
+                <p className="text-3xl font-bold text-gray-900">{kpis.robotRisk}</p>
+              </div>
+            </div>
+          </Card>
+          <Card className="p-4 border border-gray-200">
+            <div>
+              <p className="text-xs text-gray-500 mb-1">Agentic Risk</p>
+              <p className="text-2xl font-bold text-gray-900">{kpis.agenticRisk}</p>
+            </div>
+          </Card>
+          <Card className="p-4 border border-gray-200">
+            <div>
+              <p className="text-xs text-gray-500 mb-1">AI Units Risk</p>
+              <p className="text-2xl font-bold text-gray-900">{kpis.aiRisk}</p>
+            </div>
+          </Card>
+          <Card className="p-4 border border-gray-200">
+            <div>
+              <p className="text-xs text-gray-500 mb-1">Platform Risk</p>
+              <p className="text-2xl font-bold text-gray-900">{kpis.platformRisk}</p>
+            </div>
+          </Card>
+          <Card className="p-4 border border-gray-200">
+            <div>
+              <p className="text-xs text-gray-500 mb-1">DU Units Risk</p>
+              <p className="text-2xl font-bold text-gray-900">{kpis.duRisk}</p>
+            </div>
+          </Card>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <Card className="p-6 border border-gray-200">
+            <h3 className="text-sm font-semibold text-gray-900 mb-4">Risk Distribution</h3>
+            <ResponsiveContainer width="100%" height={240}>
+              <PieChart>
+                <Pie
+                  data={riskDistributionData}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={(entry) => `${entry.name}: ${entry.value}`}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="value"
+                >
+                  {riskDistributionData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          </Card>
+          <Card className="p-6 border border-gray-200">
+            <h3 className="text-sm font-semibold text-gray-900 mb-4">Risk by Unit Type</h3>
+            <ResponsiveContainer width="100%" height={240}>
+              <BarChart data={unitRiskData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis dataKey="name" tick={{ fontSize: 12 }} stroke="#6b7280" />
+                <YAxis tick={{ fontSize: 12 }} stroke="#6b7280" />
+                <Tooltip />
+                <Bar dataKey="risk" fill="#dc2626" />
+              </BarChart>
+            </ResponsiveContainer>
+          </Card>
+        </div>
+        <Card className="border border-gray-200">
+          <div className="px-6 py-4 border-b border-gray-200">
+            <h3 className="text-sm font-semibold text-gray-900">Top Risk Accounts</h3>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Account</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">CSM</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Risk Level</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Risk Driver</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {topRiskAccounts.map((profile) => (
+                  <tr key={profile.accountId} className="hover:bg-gray-50">
+                    <td className="px-4 py-3 text-sm font-medium text-gray-900 whitespace-nowrap">
+                      {profile.accountName}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">
+                      {profile.csm}
+                    </td>
+                    <td className="px-4 py-3 text-sm whitespace-nowrap">
+                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getRiskColor(profile.overallRisk)}`}>
+                        {profile.overallRisk.toUpperCase()}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-700">
+                      {profile.primaryRiskDriver}
+                    </td>
+                    <td className="px-4 py-3 text-sm">
+                      <Link to={`/account/${profile.accountId}`}>
+                        <Button variant="outline" size="sm">View Details</Button>
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
       </div>
     </AppLayout>
-  )
+  );
 }
