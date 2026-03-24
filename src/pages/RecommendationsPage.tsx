@@ -1,11 +1,9 @@
-import React, { useMemo, useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useMemo, useState } from 'react';
 import { AlertCircle } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { useAuth } from '../hooks/useAuth';
-import { getDataService } from '../services/dataService';
+import accountsData from '../data/accounts.json';
 import { calculateAccountRiskProfile } from '../utils/riskCalculations';
 import { generateAccountRecommendations } from '../utils/recommendations';
 import type { AccountData, Recommendation } from '../types/account';
@@ -13,29 +11,11 @@ interface RecommendationWithAccount extends Recommendation {
   accountId: string;
   accountName: string;
   csm: string;
-  accountDirector: string;
 }
 export function RecommendationsPage() {
-  const { sdk } = useAuth();
   const [selectedPriority, setSelectedPriority] = useState<'all' | 'high' | 'medium' | 'low'>('all');
   const [selectedCSM, setSelectedCSM] = useState<string>('all');
-  const [loading, setLoading] = useState(true);
-  const [accounts, setAccounts] = useState<AccountData[]>([]);
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        const dataService = getDataService(true, sdk);
-        const data = await dataService.getAllAccounts();
-        setAccounts(data);
-      } catch (error) {
-        console.error('Error loading accounts:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, [sdk]);
+  const accounts = useMemo(() => accountsData as AccountData[], []);
   const riskProfiles = useMemo(() => {
     return accounts.map(calculateAccountRiskProfile);
   }, [accounts]);
@@ -49,7 +29,6 @@ export function RecommendationsPage() {
           accountId: profile.accountId,
           accountName: profile.accountName,
           csm: profile.csm,
-          accountDirector: profile.accountDirector,
         });
       });
     });
@@ -84,15 +63,6 @@ export function RecommendationsPage() {
         return 'bg-gray-100 text-gray-700 border-gray-200';
     }
   };
-  if (loading) {
-    return (
-      <AppLayout container>
-        <div className="flex items-center justify-center py-12">
-          <p className="text-gray-500">Loading accounts...</p>
-        </div>
-      </AppLayout>
-    );
-  }
   return (
     <AppLayout container>
       <div className="space-y-6">
@@ -176,12 +146,7 @@ export function RecommendationsPage() {
                 </span>
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
-                    <Link
-                      to={`/account/${rec.accountId}`}
-                      className="text-sm font-semibold text-gray-900 hover:text-blue-600 hover:underline"
-                    >
-                      {rec.accountName}
-                    </Link>
+                    <h3 className="text-sm font-semibold text-gray-900">{rec.accountName}</h3>
                     <span className="text-xs text-gray-500">•</span>
                     <span className="text-xs text-gray-500">{rec.csm}</span>
                     <span className="text-xs text-gray-500">•</span>
