@@ -1,39 +1,20 @@
-import React, { useMemo, useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useMemo, useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { getDataService } from '../services/dataService';
+import accountsData from '../data/accounts.json';
 import { calculateAccountRiskProfile, getRiskColor } from '../utils/riskCalculations';
 import type { AccountData, RiskLevel, UnitType } from '../types/account';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { useAuth } from '../hooks/useAuth';
 const RISK_COLORS = {
   high: '#dc2626',
   medium: '#ca8a04',
   low: '#16a34a',
 };
 export function RiskAnalysisPage() {
-  const { sdk } = useAuth();
   const [selectedUnit, setSelectedUnit] = useState<UnitType | 'all'>('all');
   const [selectedRisk, setSelectedRisk] = useState<RiskLevel | 'all'>('all');
-  const [loading, setLoading] = useState(true);
-  const [accounts, setAccounts] = useState<AccountData[]>([]);
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        const dataService = getDataService(true, sdk);
-        const data = await dataService.getAllAccounts();
-        setAccounts(data);
-      } catch (error) {
-        console.error('Error loading accounts:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, [sdk]);
+  const accounts = useMemo(() => accountsData as AccountData[], []);
   const riskProfiles = useMemo(() => {
     return accounts.map(calculateAccountRiskProfile);
   }, [accounts]);
@@ -83,15 +64,6 @@ export function RiskAnalysisPage() {
       { name: 'Low Risk', value: low, color: RISK_COLORS.low },
     ];
   }, [riskProfiles]);
-  if (loading) {
-    return (
-      <AppLayout container>
-        <div className="flex items-center justify-center py-12">
-          <p className="text-gray-500">Loading accounts...</p>
-        </div>
-      </AppLayout>
-    );
-  }
   return (
     <AppLayout container>
       <div className="space-y-6">
@@ -182,7 +154,6 @@ export function RiskAnalysisPage() {
                 <tr>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Account</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">CSM</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Account Director</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Risk Level</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Risk Driver</th>
                 </tr>
@@ -190,19 +161,11 @@ export function RiskAnalysisPage() {
               <tbody className="bg-white divide-y divide-gray-200">
                 {filteredAccounts.map((profile) => (
                   <tr key={profile.accountId} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 text-sm font-medium whitespace-nowrap">
-                      <Link
-                        to={`/account/${profile.accountId}`}
-                        className="text-gray-900 hover:text-blue-600 hover:underline"
-                      >
-                        {profile.accountName}
-                      </Link>
+                    <td className="px-4 py-3 text-sm font-medium text-gray-900 whitespace-nowrap">
+                      {profile.accountName}
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">
                       {profile.csm}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">
-                      {profile.accountDirector}
                     </td>
                     <td className="px-4 py-3 text-sm whitespace-nowrap">
                       <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getRiskColor(profile.overallRisk)}`}>

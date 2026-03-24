@@ -1,19 +1,16 @@
-import React, { useMemo, useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useMemo, useState } from 'react';
 import { Calendar, AlertTriangle } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { getDataService } from '../services/dataService';
+import accountsData from '../data/accounts.json';
 import { calculateAccountRiskProfile } from '../utils/riskCalculations';
 import type { AccountData } from '../types/account';
 import { format } from 'date-fns';
-import { useAuth } from '../hooks/useAuth';
 interface ExpiryItem {
   accountId: string;
   accountName: string;
   csm: string;
-  accountDirector: string;
   unitType: string;
   expiryDate: string;
   daysUntilExpiry: number;
@@ -22,25 +19,8 @@ interface ExpiryItem {
   consumed: number;
 }
 export function ExpiryViewPage() {
-  const { sdk } = useAuth();
   const [expiryWindow, setExpiryWindow] = useState<number>(90);
-  const [loading, setLoading] = useState(true);
-  const [accounts, setAccounts] = useState<AccountData[]>([]);
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        const dataService = getDataService(true, sdk);
-        const data = await dataService.getAllAccounts();
-        setAccounts(data);
-      } catch (error) {
-        console.error('Error loading accounts:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, [sdk]);
+  const accounts = useMemo(() => accountsData as AccountData[], []);
   const riskProfiles = useMemo(() => {
     return accounts.map(calculateAccountRiskProfile);
   }, [accounts]);
@@ -52,7 +32,6 @@ export function ExpiryViewPage() {
           accountId: profile.accountId,
           accountName: profile.accountName,
           csm: profile.csm,
-          accountDirector: profile.accountDirector,
           unitType: 'Robots',
           expiryDate: profile.robots.expiryDate,
           daysUntilExpiry: profile.robots.daysUntilExpiry,
@@ -66,7 +45,6 @@ export function ExpiryViewPage() {
           accountId: profile.accountId,
           accountName: profile.accountName,
           csm: profile.csm,
-          accountDirector: profile.accountDirector,
           unitType: 'Agentic Units',
           expiryDate: profile.agenticUnits.expiryDate,
           daysUntilExpiry: profile.agenticUnits.daysUntilExpiry,
@@ -80,7 +58,6 @@ export function ExpiryViewPage() {
           accountId: profile.accountId,
           accountName: profile.accountName,
           csm: profile.csm,
-          accountDirector: profile.accountDirector,
           unitType: 'AI Units',
           expiryDate: profile.aiUnits.expiryDate,
           daysUntilExpiry: profile.aiUnits.daysUntilExpiry,
@@ -94,7 +71,6 @@ export function ExpiryViewPage() {
           accountId: profile.accountId,
           accountName: profile.accountName,
           csm: profile.csm,
-          accountDirector: profile.accountDirector,
           unitType: 'Platform Units',
           expiryDate: profile.platformUnits.expiryDate,
           daysUntilExpiry: profile.platformUnits.daysUntilExpiry,
@@ -108,7 +84,6 @@ export function ExpiryViewPage() {
           accountId: profile.accountId,
           accountName: profile.accountName,
           csm: profile.csm,
-          accountDirector: profile.accountDirector,
           unitType: 'DU Units',
           expiryDate: profile.duUnits.expiryDate,
           daysUntilExpiry: profile.duUnits.daysUntilExpiry,
@@ -126,15 +101,6 @@ export function ExpiryViewPage() {
     if (days <= 90) return 'bg-yellow-100 text-yellow-700 border-yellow-200';
     return 'bg-blue-100 text-blue-700 border-blue-200';
   };
-  if (loading) {
-    return (
-      <AppLayout container>
-        <div className="flex items-center justify-center py-12">
-          <p className="text-gray-500">Loading accounts...</p>
-        </div>
-      </AppLayout>
-    );
-  }
   return (
     <AppLayout container>
       <div className="space-y-6">
@@ -172,24 +138,15 @@ export function ExpiryViewPage() {
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
-                    <Link
-                      to={`/account/${item.accountId}`}
-                      className="text-sm font-semibold text-gray-900 hover:text-blue-600 hover:underline"
-                    >
-                      {item.accountName}
-                    </Link>
+                    <h3 className="text-sm font-semibold text-gray-900">{item.accountName}</h3>
                     <span className="text-xs px-2 py-0.5 bg-white rounded border border-gray-200 text-gray-700">
                       {item.unitType}
                     </span>
                   </div>
-                  <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                     <div>
                       <p className="text-xs text-gray-500">CSM</p>
                       <p className="font-medium text-gray-900">{item.csm}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-500">Account Director</p>
-                      <p className="font-medium text-gray-900">{item.accountDirector}</p>
                     </div>
                     <div>
                       <p className="text-xs text-gray-500">Expiry Date</p>
@@ -197,11 +154,11 @@ export function ExpiryViewPage() {
                     </div>
                     <div>
                       <p className="text-xs text-gray-500">Utilization</p>
-                      <p className="font-medium text-gray-900">{isNaN(item.utilization) || item.utilization == null ? '—' : Math.round(item.utilization * 100) + '%'}</p>
+                      <p className="font-medium text-gray-900">{Math.round(item.utilization * 100)}%</p>
                     </div>
                     <div>
                       <p className="text-xs text-gray-500">Consumed / Purchased</p>
-                      <p className="font-medium text-gray-900">{item.consumed == null ? '—' : item.consumed.toLocaleString()} / {item.purchased == null ? '—' : item.purchased.toLocaleString()}</p>
+                      <p className="font-medium text-gray-900">{item.consumed.toLocaleString()} / {item.purchased.toLocaleString()}</p>
                     </div>
                   </div>
                 </div>
