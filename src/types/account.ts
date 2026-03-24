@@ -2,7 +2,6 @@ export interface AccountData {
   accountName: string;
   accountId: string;
   csm: string;
-  accountDirector: string;
   robots: number;
   robotExpiry: string;
   monthlyRobotHoursConsumed: number;
@@ -36,6 +35,7 @@ export interface RobotUtilization {
   utilization24x7: number;
   utilizationBusiness: number;
   utilizationRisk24x7: RiskLevel;
+  utilizationRiskBusiness: RiskLevel;
   expiryDate: string;
   expiryRisk: RiskLevel;
   daysUntilExpiry: number;
@@ -45,7 +45,6 @@ export interface AccountRiskProfile {
   accountId: string;
   accountName: string;
   csm: string;
-  accountDirector: string;
   robots?: RobotUtilization;
   agenticUnits?: UnitUtilization;
   aiUnits?: UnitUtilization;
@@ -68,7 +67,6 @@ export interface AccountRecommendations {
 export type UnitType = 'robots' | 'agenticUnits' | 'aiUnits' | 'platformUnits' | 'duUnits';
 export interface FilterState {
   csm: string;
-  accountDirector: string;
   riskType: RiskLevel | 'all';
   expiryWindow: number | 'all';
   accountName: string;

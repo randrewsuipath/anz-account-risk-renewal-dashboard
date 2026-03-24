@@ -1,12 +1,11 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Calendar, AlertCircle } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { useAuth } from '../hooks/useAuth';
-import { getDataService } from '../services/dataService';
+import accountsData from '../data/accounts.json';
 import { calculateAccountRiskProfile, getRiskColor } from '../utils/riskCalculations';
 import { generateAccountRecommendations } from '../utils/recommendations';
 import type { AccountData, UnitUtilization, RobotUtilization } from '../types/account';
@@ -23,19 +22,19 @@ function UnitCard({ title, unit }: { title: string; unit: UnitUtilization }) {
         <div className="grid grid-cols-2 gap-4">
           <div>
             <p className="text-xs text-gray-500">Purchased</p>
-            <p className="text-xl font-bold text-gray-900">{unit.purchased == null ? '—' : unit.purchased.toLocaleString()}</p>
+            <p className="text-xl font-bold text-gray-900">{unit.purchased.toLocaleString()}</p>
           </div>
           <div>
             <p className="text-xs text-gray-500">Consumed</p>
-            <p className="text-xl font-bold text-gray-900">{unit.consumed == null ? '—' : unit.consumed.toLocaleString()}</p>
+            <p className="text-xl font-bold text-gray-900">{unit.consumed.toLocaleString()}</p>
           </div>
         </div>
         <div>
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs text-gray-500">Utilization</span>
-            <span className="text-sm font-semibold text-gray-900">{isNaN(unit.utilization) || unit.utilization == null ? '—' : Math.round(unit.utilization * 100) + '%'}</span>
+            <span className="text-sm font-semibold text-gray-900">{Math.round(unit.utilization * 100)}%</span>
           </div>
-          <Progress value={isNaN(unit.utilization) || unit.utilization == null ? 0 : unit.utilization * 100} className="h-2" />
+          <Progress value={unit.utilization * 100} className="h-2" />
         </div>
         <div className="flex items-center gap-2 text-sm">
           <Calendar className="w-4 h-4 text-gray-400" />
@@ -65,30 +64,35 @@ function RobotCard({ robots }: { robots: RobotUtilization }) {
           </div>
           <div>
             <p className="text-xs text-gray-500">Monthly Hours</p>
-            <p className="text-xl font-bold text-gray-900">{robots.monthlyHoursConsumed == null ? '—' : robots.monthlyHoursConsumed.toLocaleString()}</p>
+            <p className="text-xl font-bold text-gray-900">{robots.monthlyHoursConsumed.toLocaleString()}</p>
           </div>
         </div>
-        <div>
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs text-gray-500">24/7 (24/7/30) Utilization</span>
-            <span className="text-sm font-semibold text-gray-900">{isNaN(robots.utilization24x7) || robots.utilization24x7 == null ? '—' : Math.round(robots.utilization24x7 * 100) + '%'}</span>
+        <div className="space-y-3">
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs text-gray-500">24/7 Utilization</span>
+              <span className="text-sm font-semibold text-gray-900">{Math.round(robots.utilization24x7 * 100)}%</span>
+            </div>
+            <Progress value={robots.utilization24x7 * 100} className="h-2" />
+            <div className="flex items-center justify-between mt-1">
+              <span className="text-xs text-gray-400">Capacity: {(robots.robots * 5040).toLocaleString()} hrs/mo</span>
+              <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium ${getRiskColor(robots.utilizationRisk24x7)}`}>
+                {robots.utilizationRisk24x7.toUpperCase()}
+              </span>
+            </div>
           </div>
-          <Progress value={isNaN(robots.utilization24x7) || robots.utilization24x7 == null ? 0 : robots.utilization24x7 * 100} className="h-2" />
-          <div className="flex items-center justify-between mt-1">
-            <span className="text-xs text-gray-400">Capacity: {robots.robots == null ? '—' : (robots.robots * 5040).toLocaleString()} hrs/mo</span>
-            <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium ${getRiskColor(robots.utilizationRisk24x7)}`}>
-              {robots.utilizationRisk24x7.toUpperCase()}
-            </span>
-          </div>
-        </div>
-        <div>
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs text-gray-500">Business Hours (8/5/20) Utilization</span>
-            <span className="text-sm font-semibold text-gray-900">{isNaN(robots.utilizationBusiness) || robots.utilizationBusiness == null ? '—' : Math.round(robots.utilizationBusiness * 100) + '%'}</span>
-          </div>
-          <Progress value={isNaN(robots.utilizationBusiness) || robots.utilizationBusiness == null ? 0 : robots.utilizationBusiness * 100} className="h-2" />
-          <div className="flex items-center justify-between mt-1">
-            <span className="text-xs text-gray-400">Capacity: {robots.robots == null ? '—' : (robots.robots * 160).toLocaleString()} hrs/mo</span>
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs text-gray-500">Business Hours (8/5/20)</span>
+              <span className="text-sm font-semibold text-gray-900">{Math.round(robots.utilizationBusiness * 100)}%</span>
+            </div>
+            <Progress value={robots.utilizationBusiness * 100} className="h-2" />
+            <div className="flex items-center justify-between mt-1">
+              <span className="text-xs text-gray-400">Capacity: {(robots.robots * 160).toLocaleString()} hrs/mo</span>
+              <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium ${getRiskColor(robots.utilizationRiskBusiness)}`}>
+                {robots.utilizationRiskBusiness.toUpperCase()}
+              </span>
+            </div>
           </div>
         </div>
         <div className="flex items-center gap-2 text-sm">
@@ -104,28 +108,8 @@ function RobotCard({ robots }: { robots: RobotUtilization }) {
 }
 export function AccountDetailPage() {
   const { accountId } = useParams<{ accountId: string }>();
-  const { sdk } = useAuth();
-  const [loading, setLoading] = useState(true);
-  const [accounts, setAccounts] = useState<AccountData[]>([]);
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        const dataService = getDataService(true, sdk);
-        const data = await dataService.getAllAccounts();
-        setAccounts(data);
-      } catch (error) {
-        console.error('Error loading accounts:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, [sdk]);
-  const account = useMemo(() => {
-    const found = accounts.find(a => a.accountId === accountId);
-    return found;
-  }, [accounts, accountId]);
+  const accounts = useMemo(() => accountsData as AccountData[], []);
+  const account = useMemo(() => accounts.find(a => a.accountId === accountId), [accounts, accountId]);
   const profile = useMemo(() => {
     if (!account) return null;
     return calculateAccountRiskProfile(account);
@@ -134,15 +118,6 @@ export function AccountDetailPage() {
     if (!profile) return null;
     return generateAccountRecommendations(profile);
   }, [profile]);
-  if (loading) {
-    return (
-      <AppLayout container>
-        <div className="flex items-center justify-center py-12">
-          <p className="text-gray-500">Loading accounts...</p>
-        </div>
-      </AppLayout>
-    );
-  }
   if (!account || !profile) {
     return (
       <AppLayout container>
@@ -171,7 +146,6 @@ export function AccountDetailPage() {
               <div className="flex items-center gap-4 mt-2">
                 <p className="text-sm text-gray-500">Account ID: {profile.accountId}</p>
                 <p className="text-sm text-gray-500">CSM: {profile.csm}</p>
-                <p className="text-sm text-gray-500">Account Director: {profile.accountDirector}</p>
               </div>
             </div>
             <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium ${getRiskColor(profile.overallRisk)}`}>
