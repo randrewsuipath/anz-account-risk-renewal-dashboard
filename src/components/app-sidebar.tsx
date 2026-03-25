@@ -11,7 +11,7 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
 } from "@/components/ui/sidebar";
-export function AppSidebar(): JSX.Element {
+export function AppSidebar(): React.JSX.Element {
   const location = useLocation();
   const isActive = (path: string) => location.pathname === path;
   return (
