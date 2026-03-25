@@ -1,9 +1,9 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { Calendar, AlertTriangle } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AppLayout } from '@/components/layout/AppLayout';
-import accountsData from '../data/accounts.json';
+import { getDataService } from '../services/dataService';
 import { calculateAccountRiskProfile } from '../utils/riskCalculations';
 import type { AccountData } from '../types/account';
 import { format } from 'date-fns';
@@ -11,6 +11,7 @@ interface ExpiryItem {
   accountId: string;
   accountName: string;
   csm: string;
+  accountDirector: string;
   unitType: string;
   expiryDate: string;
   daysUntilExpiry: number;
@@ -20,7 +21,24 @@ interface ExpiryItem {
 }
 export function ExpiryViewPage() {
   const [expiryWindow, setExpiryWindow] = useState<number>(90);
-  const accounts = useMemo(() => accountsData as AccountData[], []);
+  const [loading, setLoading] = useState(true);
+  const [accounts, setAccounts] = useState<AccountData[]>([]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const dataService = getDataService(false);
+        const data = await dataService.getAllAccounts();
+        setAccounts(data);
+      } catch (error) {
+        console.error('Error loading accounts:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
   const riskProfiles = useMemo(() => {
     return accounts.map(calculateAccountRiskProfile);
   }, [accounts]);
@@ -32,6 +50,7 @@ export function ExpiryViewPage() {
           accountId: profile.accountId,
           accountName: profile.accountName,
           csm: profile.csm,
+          accountDirector: profile.accountDirector,
           unitType: 'Robots',
           expiryDate: profile.robots.expiryDate,
           daysUntilExpiry: profile.robots.daysUntilExpiry,
@@ -45,6 +64,7 @@ export function ExpiryViewPage() {
           accountId: profile.accountId,
           accountName: profile.accountName,
           csm: profile.csm,
+          accountDirector: profile.accountDirector,
           unitType: 'Agentic Units',
           expiryDate: profile.agenticUnits.expiryDate,
           daysUntilExpiry: profile.agenticUnits.daysUntilExpiry,
@@ -58,6 +78,7 @@ export function ExpiryViewPage() {
           accountId: profile.accountId,
           accountName: profile.accountName,
           csm: profile.csm,
+          accountDirector: profile.accountDirector,
           unitType: 'AI Units',
           expiryDate: profile.aiUnits.expiryDate,
           daysUntilExpiry: profile.aiUnits.daysUntilExpiry,
@@ -71,6 +92,7 @@ export function ExpiryViewPage() {
           accountId: profile.accountId,
           accountName: profile.accountName,
           csm: profile.csm,
+          accountDirector: profile.accountDirector,
           unitType: 'Platform Units',
           expiryDate: profile.platformUnits.expiryDate,
           daysUntilExpiry: profile.platformUnits.daysUntilExpiry,
@@ -84,6 +106,7 @@ export function ExpiryViewPage() {
           accountId: profile.accountId,
           accountName: profile.accountName,
           csm: profile.csm,
+          accountDirector: profile.accountDirector,
           unitType: 'DU Units',
           expiryDate: profile.duUnits.expiryDate,
           daysUntilExpiry: profile.duUnits.daysUntilExpiry,
@@ -101,6 +124,16 @@ export function ExpiryViewPage() {
     if (days <= 90) return 'bg-yellow-100 text-yellow-700 border-yellow-200';
     return 'bg-blue-100 text-blue-700 border-blue-200';
   };
+  if (loading) {
+    return (
+      <AppLayout container>
+        <div className="flex items-center justify-center py-12">
+          <p className="text-gray-500">Loading accounts...</p>
+        </div>
+      </AppLayout>
+    );
+  }
+
   return (
     <AppLayout container>
       <div className="space-y-6">
@@ -143,10 +176,14 @@ export function ExpiryViewPage() {
                       {item.unitType}
                     </span>
                   </div>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
                     <div>
                       <p className="text-xs text-gray-500">CSM</p>
                       <p className="font-medium text-gray-900">{item.csm}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500">Account Director</p>
+                      <p className="font-medium text-gray-900">{item.accountDirector}</p>
                     </div>
                     <div>
                       <p className="text-xs text-gray-500">Expiry Date</p>
