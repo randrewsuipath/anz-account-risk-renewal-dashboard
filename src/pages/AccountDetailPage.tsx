@@ -1,11 +1,11 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, Calendar, AlertCircle } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { AppLayout } from '@/components/layout/AppLayout';
-import accountsData from '../data/accounts.json';
+import { getDataService } from '../services/dataService';
 import { calculateAccountRiskProfile, getRiskColor } from '../utils/riskCalculations';
 import { generateAccountRecommendations } from '../utils/recommendations';
 import type { AccountData, UnitUtilization, RobotUtilization } from '../types/account';
@@ -108,7 +108,25 @@ function RobotCard({ robots }: { robots: RobotUtilization }) {
 }
 export function AccountDetailPage() {
   const { accountId } = useParams<{ accountId: string }>();
-  const accounts = useMemo(() => accountsData as AccountData[], []);
+  const [loading, setLoading] = useState(true);
+  const [accounts, setAccounts] = useState<AccountData[]>([]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const dataService = getDataService(false);
+        const data = await dataService.getAllAccounts();
+        setAccounts(data);
+      } catch (error) {
+        console.error('Error loading accounts:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
   const account = useMemo(() => accounts.find(a => a.accountId === accountId), [accounts, accountId]);
   const profile = useMemo(() => {
     if (!account) return null;
@@ -118,6 +136,16 @@ export function AccountDetailPage() {
     if (!profile) return null;
     return generateAccountRecommendations(profile);
   }, [profile]);
+  if (loading) {
+    return (
+      <AppLayout container>
+        <div className="flex items-center justify-center py-12">
+          <p className="text-gray-500">Loading accounts...</p>
+        </div>
+      </AppLayout>
+    );
+  }
+
   if (!account || !profile) {
     return (
       <AppLayout container>
@@ -146,6 +174,7 @@ export function AccountDetailPage() {
               <div className="flex items-center gap-4 mt-2">
                 <p className="text-sm text-gray-500">Account ID: {profile.accountId}</p>
                 <p className="text-sm text-gray-500">CSM: {profile.csm}</p>
+                <p className="text-sm text-gray-500">Account Director: {profile.accountDirector}</p>
               </div>
             </div>
             <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm font-medium ${getRiskColor(profile.overallRisk)}`}>

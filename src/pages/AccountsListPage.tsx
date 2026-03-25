@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowUpDown } from 'lucide-react';
 import { Card } from '@/components/ui/card';
@@ -6,26 +6,45 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AppLayout } from '@/components/layout/AppLayout';
-import accountsData from '../data/accounts.json';
+import { getDataService } from '../services/dataService';
 import { calculateAccountRiskProfile, getRiskColor } from '../utils/riskCalculations';
 import type { AccountData, RiskLevel } from '../types/account';
 type SortField = 'accountName' | 'csm' | 'overallRisk';
 type SortDirection = 'asc' | 'desc';
 export function AccountsListPage() {
+  const [loading, setLoading] = useState(true);
+  const [accounts, setAccounts] = useState<AccountData[]>([]);
   const [filters, setFilters] = useState({
     csm: 'all',
     riskType: 'all' as RiskLevel | 'all',
     accountName: '',
+    accountDirector: 'all',
   });
   const [sortField, setSortField] = useState<SortField>('accountName');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
-  const accounts = useMemo(() => accountsData as AccountData[], []);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const dataService = getDataService(false);
+        const data = await dataService.getAllAccounts();
+        setAccounts(data);
+      } catch (error) {
+        console.error('Error loading accounts:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
   const riskProfiles = useMemo(() => {
     return accounts.map(calculateAccountRiskProfile);
   }, [accounts]);
   const filteredAndSorted = useMemo(() => {
     let result = riskProfiles.filter(profile => {
       if (filters.csm !== 'all' && profile.csm !== filters.csm) return false;
+      if (filters.accountDirector !== 'all' && profile.accountDirector !== filters.accountDirector) return false;
       if (filters.riskType !== 'all' && profile.overallRisk !== filters.riskType) return false;
       if (filters.accountName && !profile.accountName.toLowerCase().includes(filters.accountName.toLowerCase())) return false;
       return true;
@@ -47,6 +66,10 @@ export function AccountsListPage() {
   const uniqueCSMs = useMemo(() => {
     return Array.from(new Set(accounts.map(a => a.csm))).sort();
   }, [accounts]);
+
+  const uniqueAccountDirectors = useMemo(() => {
+    return Array.from(new Set(accounts.map(a => a.accountDirector))).sort();
+  }, [accounts]);
   const handleSort = (field: SortField) => {
     if (sortField === field) {
       setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
@@ -55,6 +78,16 @@ export function AccountsListPage() {
       setSortDirection('asc');
     }
   };
+  if (loading) {
+    return (
+      <AppLayout container>
+        <div className="flex items-center justify-center py-12">
+          <p className="text-gray-500">Loading accounts...</p>
+        </div>
+      </AppLayout>
+    );
+  }
+
   return (
     <AppLayout container>
       <div className="space-y-6">
@@ -63,7 +96,7 @@ export function AccountsListPage() {
           <p className="text-sm text-gray-500 mt-1">Comprehensive view of all ANZ accounts</p>
         </div>
         <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1">CSM</label>
               <Select value={filters.csm} onValueChange={(value) => setFilters(prev => ({ ...prev, csm: value }))}>
@@ -74,6 +107,20 @@ export function AccountsListPage() {
                   <SelectItem value="all">All CSMs</SelectItem>
                   {uniqueCSMs.map(csm => (
                     <SelectItem key={csm} value={csm}>{csm}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Account Director</label>
+              <Select value={filters.accountDirector} onValueChange={(value) => setFilters(prev => ({ ...prev, accountDirector: value }))}>
+                <SelectTrigger className="bg-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Directors</SelectItem>
+                  {uniqueAccountDirectors.map(director => (
+                    <SelectItem key={director} value={director}>{director}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -126,6 +173,7 @@ export function AccountsListPage() {
                       <ArrowUpDown className="w-3 h-3" />
                     </button>
                   </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Account Director</th>
                   <th className="px-4 py-3 text-left">
                     <button
                       onClick={() => handleSort('overallRisk')}
@@ -152,6 +200,9 @@ export function AccountsListPage() {
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">
                       {profile.csm}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">
+                      {profile.accountDirector}
                     </td>
                     <td className="px-4 py-3 text-sm whitespace-nowrap">
                       <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${getRiskColor(profile.overallRisk)}`}>
