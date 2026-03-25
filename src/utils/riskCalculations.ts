@@ -126,6 +126,7 @@ export function calculateAccountRiskProfile(account: AccountData): AccountRiskPr
     accountId: account.accountId,
     accountName: account.accountName,
     csm: account.csm,
+    accountDirector: account.accountDirector,
     robots: robots || undefined,
     agenticUnits: agenticUnits || undefined,
     aiUnits: aiUnits || undefined,
