@@ -11,7 +11,7 @@ This application implements sophisticated risk scoring for Agentic Units, AI Uni
 - **Expiry Timeline View**: Calendar-style visualization of upcoming license expirations
 - **Actionable Recommendations**: Unit-specific, sales-oriented recommendations for each account
 - **Advanced Filtering**: Filter by CSM, Account Director, risk type, expiry window, and account name
-- **Data Fabric Integration**: Structured for seamless UiPath Data Fabric entity integration (see [Data Fabric Setup Guide](src/docs/DATA_FABRIC_SETUP.md))
+- **Flexible Data Sources**: Supports both static JSON and UiPath Data Fabric entity integration
 ## Technology Stack
 ### Frontend
 - **React 18** with TypeScript
@@ -33,7 +33,7 @@ This application implements sophisticated risk scoring for Agentic Units, AI Uni
 ## Prerequisites
 - [Bun](https://bun.sh/) v1.0 or higher
 - Node.js 18+ (for compatibility)
-- UiPath Cloud account (for OAuth authentication and Data Fabric integration)
+- UiPath Cloud account (for OAuth authentication and optional Data Fabric integration)
 ## Installation
 1. Clone the repository:
 ```bash
@@ -52,7 +52,7 @@ VITE_UIPATH_ORG_NAME=your-org-name
 VITE_UIPATH_TENANT_NAME=your-tenant-name
 VITE_UIPATH_CLIENT_ID=your-client-id
 VITE_UIPATH_REDIRECT_URI=http://localhost:3000
-VITE_UIPATH_SCOPE=OR.Execution DataFabric.Data.Read DataFabric.Schema.Read
+VITE_UIPATH_SCOPE=OR.Administration.Read OR.Assets.Read OR.Execution.Read OR.Folders OR.Jobs OR.Queues.Read OR.Tasks PIMS Traces.Api DataFabric.Data.Read DataFabric.Data.Write DataFabric.Schema.Read ConversationalAgents
 ```
 Replace the placeholder values with your UiPath Cloud credentials.
 ## Development
@@ -73,7 +73,7 @@ src/
 │   ├── ui/             # shadcn/ui components
 │   └── layout/         # Layout components
 ├── docs/               # Documentation
-│   └── DATA_FABRIC_SETUP.md  # Data Fabric integration guide
+│   └── DATA_FABRIC_SETUP.md  # Detailed Data Fabric integration guide
 ├── hooks/              # Custom React hooks
 ├── lib/                # Utility functions
 ├── pages/              # Page components
@@ -86,18 +86,196 @@ src/
 └── main.tsx           # Application entry point
 ```
 ## Data Sources
-The application supports two data sources through a service abstraction layer:
+The application supports two data sources through a data service abstraction layer:
 ### 1. Static JSON (Current Default)
-Data is loaded from `src/data/accounts.json`. This is the current implementation and requires no additional setup.
-### 2. UiPath Data Fabric (Optional)
+Data is loaded from `src/data/accounts.json`. This is the current implementation and requires no additional setup beyond the basic OAuth configuration.
+**Advantages:**
+- No additional setup required
+- Works immediately after installation
+- Perfect for development and testing
+- No external dependencies
+### 2. UiPath Data Fabric (Production Option)
 For production deployments, the application can fetch data from a UiPath Data Fabric entity named `anzlicenseutilisation`.
-**To enable Data Fabric integration:**
-1. Read the comprehensive setup guide: [src/docs/DATA_FABRIC_SETUP.md](src/docs/DATA_FABRIC_SETUP.md)
-2. Create the entity in Data Fabric with the specified schema
-3. Import account data into the entity
-4. Update page components to use `getDataService(true, sdk)` instead of `getDataService(false)`
-5. Verify OAuth scopes include `DataFabric.Data.Read` and `DataFabric.Schema.Read`
-The data service abstraction layer (`src/services/dataService.ts`) handles both sources transparently - no other code changes are needed.
+**Advantages:**
+- Live data updates
+- Centralized data management
+- Integration with UiPath ecosystem
+- Scalable for large datasets
+## Data Fabric Integration
+This application supports seamless integration with UiPath Data Fabric through a data service abstraction layer.
+### Current Configuration
+By default, the application uses static JSON data from `src/data/accounts.json`. To switch to Data Fabric, follow the steps below.
+### Step 1: Create the Entity in Data Fabric
+Navigate to **UiPath Automation Cloud > Data Service > Entities** and create a new entity named `anzlicenseutilisation` with the following schema:
+| Field Name | Data Type | Required | Description |
+|------------|-----------|----------|-------------|
+| accountName | String | Yes | Account name |
+| accountId | String | Yes | Unique account identifier (Primary Key) |
+| csm | String | Yes | Customer Success Manager name |
+| accountDirector | String | Yes | Account Director name |
+| robots | Integer | Yes | Number of robot licenses |
+| robotExpiry | DateTime | Yes | Robot license expiry date (ISO 8601 format) |
+| monthlyRobotHoursConsumed | Integer | Yes | Monthly robot hours consumed |
+| agenticUnits | Integer | Yes | Number of Agentic Units |
+| agenticUnitsConsumed | Integer | Yes | Agentic Units consumed |
+| agenticUnitExpiry | DateTime | Yes | Agentic Units expiry date (ISO 8601 format) |
+| aiUnits | Integer | Yes | Number of AI Units |
+| aiUnitsConsumed | Integer | Yes | AI Units consumed |
+| aiUnitExpiry | DateTime | Yes | AI Units expiry date (ISO 8601 format) |
+| platformUnits | Integer | Yes | Number of Platform Units |
+| platformUnitsConsumed | Integer | Yes | Platform Units consumed |
+| platformUnitExpiry | DateTime | Yes | Platform Units expiry date (ISO 8601 format) |
+| duUnits | Integer | Yes | Number of DU Units |
+| duUnitsConsumed | Integer | Yes | DU Units consumed |
+| duUnitExpiry | DateTime | Yes | DU Units expiry date (ISO 8601 format) |
+**Important Notes:**
+- Set `accountId` as the primary key
+- All date fields must be in ISO 8601 format (e.g., "2025-05-15T00:00:00Z")
+- Field names are case-sensitive and must match exactly
+- All numeric fields should be stored as integers, not strings
+### Step 2: Import Data into the Entity
+You can import the sample data from `src/data/accounts.json` into your Data Fabric entity using:
+- **Data Service bulk import feature** (recommended for initial setup)
+- **UiPath Data Service API** (for programmatic imports)
+- **Manual entry through the UI** (for small datasets)
+**Data Transformation Notes:**
+- Convert date strings to ISO 8601 format if needed
+- Ensure all numeric values are integers
+- Verify field names match exactly (case-sensitive)
+### Step 3: Update OAuth Scopes
+Ensure your `.env` file includes the required Data Fabric scopes:
+```env
+VITE_UIPATH_SCOPE=OR.Administration.Read OR.Assets.Read OR.Execution.Read OR.Folders OR.Jobs OR.Queues.Read OR.Tasks PIMS Traces.Api DataFabric.Data.Read DataFabric.Data.Write DataFabric.Schema.Read ConversationalAgents
+```
+The critical scopes for Data Fabric are:
+- `DataFabric.Data.Read` - Read entity records
+- `DataFabric.Schema.Read` - Read entity schema
+- `DataFabric.Data.Write` - (Optional) Write entity records if you plan to update data from the app
+### Step 4: Switch to Data Fabric in Code
+Update each page component to use Data Fabric instead of static JSON.
+**In the following files:**
+- `src/pages/HomePage.tsx`
+- `src/pages/AccountDetailPage.tsx`
+- `src/pages/AccountsListPage.tsx`
+- `src/pages/RiskAnalysisPage.tsx`
+- `src/pages/ExpiryViewPage.tsx`
+- `src/pages/RecommendationsPage.tsx`
+**Change:**
+```typescript
+const dataService = getDataService(false);
+```
+**To:**
+```typescript
+const { sdk } = useAuth();
+const dataService = getDataService(true, sdk);
+```
+**Example (HomePage.tsx):**
+```typescript
+import { useAuth } from '../hooks/useAuth';
+import { getDataService } from '../services/dataService';
+export function HomePage() {
+  const { sdk } = useAuth();  // Add this line
+  const [accounts, setAccounts] = useState<AccountData[]>([]);
+  React.useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const dataService = getDataService(true, sdk);  // Change false to true, add sdk
+        const data = await dataService.getAllAccounts();
+        setAccounts(data);
+      } catch (error) {
+        console.error('Error loading accounts:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, [sdk]);  // Add sdk to dependency array
+  // ... rest of component
+}
+```
+### Step 5: Deploy and Test
+Build and preview the application:
+```bash
+bun run build
+bun run preview
+```
+Verify:
+- ✅ All accounts load correctly from Data Fabric
+- ✅ Filters work as expected (CSM, Account Director, Risk Level, etc.)
+- ✅ Risk calculations are accurate
+- ✅ All dashboards display data properly
+- ✅ Navigation between pages works smoothly
+- ✅ No console errors related to data fetching
+### Data Service Architecture
+The application uses a data service abstraction layer (`src/services/dataService.ts`) that provides:
+- **`DataService` interface**: Common contract for data access
+- **`StaticDataService`**: Reads from `accounts.json` (current default)
+- **`DataFabricService`**: Reads from UiPath Data Fabric entity `anzlicenseutilisation`
+- **`getDataService(useFabric, sdk?)`**: Factory function to create the appropriate service
+This architecture allows seamless switching between data sources without changing business logic or UI components. The abstraction ensures:
+- **Type Safety**: Both services implement the same TypeScript interface
+- **Consistent API**: All pages use the same `getAllAccounts()` method
+- **Easy Testing**: Switch to static JSON for development/testing
+- **Production Ready**: Switch to Data Fabric for live deployments
+### Troubleshooting Data Fabric Integration
+#### Error: "SDK instance is required for Data Fabric service"
+**Cause**: The SDK instance is not being passed to `getDataService()`
+**Solution**:
+- Ensure you're passing the SDK instance: `getDataService(true, sdk)`
+- Verify `useAuth()` hook is imported: `import { useAuth } from '../hooks/useAuth'`
+- Check that `const { sdk } = useAuth()` is called at the component level
+#### Error: "Failed to fetch accounts from Data Fabric"
+**Cause**: OAuth scopes, entity name, or entity configuration issue
+**Solution**:
+- Check OAuth scopes include `DataFabric.Data.Read` and `DataFabric.Schema.Read`
+- Verify entity name is exactly `anzlicenseutilisation` (case-sensitive)
+- Confirm entity exists in Data Service and contains records
+- Check browser console for detailed error messages
+- Verify you're logged in to the correct UiPath organization and tenant
+#### Data not displaying or incorrect
+**Cause**: Field name mismatch, data type issues, or date format problems
+**Solution**:
+- Verify all field names match exactly (case-sensitive)
+- Ensure date fields are in ISO 8601 format (e.g., "2025-05-15T00:00:00Z")
+- Check that numeric fields are stored as integers, not strings
+- Verify the entity has the correct primary key set (`accountId`)
+- Use browser DevTools Network tab to inspect the API response
+#### Authentication Issues
+**Cause**: OAuth token expired or invalid scopes
+**Solution**:
+- Log out and log back in to refresh the OAuth token
+- Verify all required scopes are in your `.env` file
+- Check that the OAuth client ID has the necessary permissions
+- Ensure the redirect URI matches your deployment URL
+#### Performance Issues
+**Cause**: Large dataset or network latency
+**Solution**:
+- The Data Fabric service fetches all records at once (no pagination in current implementation)
+- For large datasets (>1000 records), consider implementing pagination in `DataFabricService`
+- Use browser DevTools to monitor network request times
+- Consider caching strategies for frequently accessed data
+### Rollback to Static JSON
+If you need to revert to static JSON data, simply change back to:
+```typescript
+const dataService = getDataService(false);
+```
+No other code changes are required. The abstraction layer handles both sources transparently.
+**When to use Static JSON:**
+- Development and testing
+- Demo environments
+- When Data Fabric is unavailable
+- For offline development
+**When to use Data Fabric:**
+- Production deployments
+- When data needs to be updated frequently
+- When integrating with other UiPath processes
+- For centralized data management
+### Additional Resources
+For more detailed information about Data Fabric integration, see:
+- [src/docs/DATA_FABRIC_SETUP.md](src/docs/DATA_FABRIC_SETUP.md) - Comprehensive setup guide
+- [UiPath Data Service Documentation](https://docs.uipath.com/data-service) - Official documentation
+- [UiPath TypeScript SDK Reference](https://www.npmjs.com/package/@uipath/uipath-typescript) - SDK documentation
 ## Usage
 ### Dashboard Navigation
 1. **Executive Dashboard**: Landing page with KPI summary and risk distribution charts
@@ -168,6 +346,8 @@ The application uses OAuth 2.0 authentication with UiPath Cloud:
 - **Advanced Filtering**: Additional filter dimensions and saved filter presets
 - **Mobile Optimization**: Enhanced responsive design for tablet/mobile devices
 - **User Preferences**: Customizable dashboard layouts and default views
+- **Data Fabric Write Operations**: Enable updating account data from the dashboard
+- **Pagination**: Implement pagination for large datasets in Data Fabric mode
 ## Contributing
 This is an internal UiPath project. For questions or issues, contact the development team.
 ## License
