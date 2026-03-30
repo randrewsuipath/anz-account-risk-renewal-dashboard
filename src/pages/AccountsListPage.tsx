@@ -6,12 +6,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AppLayout } from '@/components/layout/AppLayout';
+import { useAuth } from '../hooks/useAuth';
 import { getDataService } from '../services/dataService';
 import { calculateAccountRiskProfile, getRiskColor } from '../utils/riskCalculations';
 import type { AccountData, RiskLevel } from '../types/account';
 type SortField = 'accountName' | 'csm' | 'overallRisk';
 type SortDirection = 'asc' | 'desc';
 export function AccountsListPage() {
+  const { sdk } = useAuth();
   const [loading, setLoading] = useState(true);
   const [accounts, setAccounts] = useState<AccountData[]>([]);
   const [filters, setFilters] = useState({
@@ -27,7 +29,7 @@ export function AccountsListPage() {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const dataService = getDataService(false);
+        const dataService = getDataService(true, sdk);
         const data = await dataService.getAllAccounts();
         setAccounts(data);
       } catch (error) {
@@ -37,7 +39,7 @@ export function AccountsListPage() {
       }
     };
     fetchData();
-  }, []);
+  }, [sdk]);
   const riskProfiles = useMemo(() => {
     return accounts.map(calculateAccountRiskProfile);
   }, [accounts]);

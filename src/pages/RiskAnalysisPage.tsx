@@ -6,12 +6,14 @@ import { getDataService } from '../services/dataService';
 import { calculateAccountRiskProfile, getRiskColor } from '../utils/riskCalculations';
 import type { AccountData, RiskLevel, UnitType } from '../types/account';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { useAuth } from '../hooks/useAuth';
 const RISK_COLORS = {
   high: '#dc2626',
   medium: '#ca8a04',
   low: '#16a34a',
 };
 export function RiskAnalysisPage() {
+  const { sdk } = useAuth();
   const [selectedUnit, setSelectedUnit] = useState<UnitType | 'all'>('all');
   const [selectedRisk, setSelectedRisk] = useState<RiskLevel | 'all'>('all');
   const [loading, setLoading] = useState(true);
@@ -21,7 +23,7 @@ export function RiskAnalysisPage() {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const dataService = getDataService(false);
+        const dataService = getDataService(true, sdk);
         const data = await dataService.getAllAccounts();
         setAccounts(data);
       } catch (error) {
@@ -31,7 +33,7 @@ export function RiskAnalysisPage() {
       }
     };
     fetchData();
-  }, []);
+  }, [sdk]);
   const riskProfiles = useMemo(() => {
     return accounts.map(calculateAccountRiskProfile);
   }, [accounts]);

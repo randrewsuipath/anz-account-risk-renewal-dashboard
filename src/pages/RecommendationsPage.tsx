@@ -3,6 +3,7 @@ import { AlertCircle } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AppLayout } from '@/components/layout/AppLayout';
+import { useAuth } from '../hooks/useAuth';
 import { getDataService } from '../services/dataService';
 import { calculateAccountRiskProfile } from '../utils/riskCalculations';
 import { generateAccountRecommendations } from '../utils/recommendations';
@@ -14,6 +15,7 @@ interface RecommendationWithAccount extends Recommendation {
   accountDirector: string;
 }
 export function RecommendationsPage() {
+  const { sdk } = useAuth();
   const [selectedPriority, setSelectedPriority] = useState<'all' | 'high' | 'medium' | 'low'>('all');
   const [selectedCSM, setSelectedCSM] = useState<string>('all');
   const [loading, setLoading] = useState(true);
@@ -23,7 +25,7 @@ export function RecommendationsPage() {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const dataService = getDataService(false);
+        const dataService = getDataService(true, sdk);
         const data = await dataService.getAllAccounts();
         setAccounts(data);
       } catch (error) {
@@ -33,7 +35,7 @@ export function RecommendationsPage() {
       }
     };
     fetchData();
-  }, []);
+  }, [sdk]);
   const riskProfiles = useMemo(() => {
     return accounts.map(calculateAccountRiskProfile);
   }, [accounts]);

@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { AppLayout } from '@/components/layout/AppLayout';
 import { calculateAccountRiskProfile, getRiskColor } from '../utils/riskCalculations';
 import { getDataService } from '../services/dataService';
+import { useAuth } from '../hooks/useAuth';
 import type { AccountData, RiskLevel, FilterState } from '../types/account';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 const RISK_COLORS = {
@@ -17,6 +18,7 @@ const RISK_COLORS = {
 };
 
 export function HomePage() {
+  const { sdk } = useAuth();
   const [loading, setLoading] = useState(true);
   const [accounts, setAccounts] = useState<AccountData[]>([]);
   const [filters, setFilters] = useState<FilterState>({
@@ -32,7 +34,7 @@ export function HomePage() {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const dataService = getDataService(false);
+        const dataService = getDataService(true, sdk);
         const data = await dataService.getAllAccounts();
         setAccounts(data);
       } catch (error) {
@@ -42,7 +44,7 @@ export function HomePage() {
       }
     };
     fetchData();
-  }, []);
+  }, [sdk]);
 
   const riskProfiles = useMemo(() => {
     return accounts.map(calculateAccountRiskProfile);
