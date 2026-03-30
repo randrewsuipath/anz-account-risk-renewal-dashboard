@@ -7,6 +7,7 @@ import { getDataService } from '../services/dataService';
 import { calculateAccountRiskProfile } from '../utils/riskCalculations';
 import type { AccountData } from '../types/account';
 import { format } from 'date-fns';
+import { useAuth } from '../hooks/useAuth';
 interface ExpiryItem {
   accountId: string;
   accountName: string;
@@ -20,6 +21,7 @@ interface ExpiryItem {
   consumed: number;
 }
 export function ExpiryViewPage() {
+  const { sdk } = useAuth();
   const [expiryWindow, setExpiryWindow] = useState<number>(90);
   const [loading, setLoading] = useState(true);
   const [accounts, setAccounts] = useState<AccountData[]>([]);
@@ -28,7 +30,7 @@ export function ExpiryViewPage() {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const dataService = getDataService(false);
+        const dataService = getDataService(true, sdk);
         const data = await dataService.getAllAccounts();
         setAccounts(data);
       } catch (error) {
@@ -38,7 +40,7 @@ export function ExpiryViewPage() {
       }
     };
     fetchData();
-  }, []);
+  }, [sdk]);
   const riskProfiles = useMemo(() => {
     return accounts.map(calculateAccountRiskProfile);
   }, [accounts]);

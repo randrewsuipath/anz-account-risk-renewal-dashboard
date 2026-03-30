@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { AppLayout } from '@/components/layout/AppLayout';
+import { useAuth } from '../hooks/useAuth';
 import { getDataService } from '../services/dataService';
 import { calculateAccountRiskProfile, getRiskColor } from '../utils/riskCalculations';
 import { generateAccountRecommendations } from '../utils/recommendations';
@@ -108,6 +109,7 @@ function RobotCard({ robots }: { robots: RobotUtilization }) {
 }
 export function AccountDetailPage() {
   const { accountId } = useParams<{ accountId: string }>();
+  const { sdk } = useAuth();
   const [loading, setLoading] = useState(true);
   const [accounts, setAccounts] = useState<AccountData[]>([]);
 
@@ -115,7 +117,7 @@ export function AccountDetailPage() {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const dataService = getDataService(false);
+        const dataService = getDataService(true, sdk);
         const data = await dataService.getAllAccounts();
         setAccounts(data);
       } catch (error) {
@@ -125,7 +127,7 @@ export function AccountDetailPage() {
       }
     };
     fetchData();
-  }, []);
+  }, [sdk]);
 
   const account = useMemo(() => accounts.find(a => a.accountId === accountId), [accounts, accountId]);
   const profile = useMemo(() => {
