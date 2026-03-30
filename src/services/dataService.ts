@@ -20,6 +20,31 @@ export class StaticDataService implements DataService {
   }
 }
 /**
+ * Helper function to convert DateTime objects to ISO 8601 strings
+ * Handles null/undefined, string, Date, and UiPath DateTime objects
+ */
+function toISOString(value: unknown): string {
+  if (value == null) {
+    return '';
+  }
+  if (typeof value === 'string') {
+    return value;
+  }
+  if (value instanceof Date) {
+    return value.toISOString();
+  }
+  // Handle UiPath DateTime objects by constructing a new Date
+  if (typeof value === 'object' && value !== null) {
+    try {
+      return new Date(value as any).toISOString();
+    } catch {
+      return '';
+    }
+  }
+  return '';
+}
+
+/**
  * Data Fabric service implementation
  * Fetches account data from UiPath Data Fabric entity 'anzlicenseutilisation'
  */
@@ -40,20 +65,20 @@ export class DataFabricService implements DataService {
         csm: record.csm as string,
         accountDirector: record.accountDirector as string,
         robots: record.robots as number,
-        robotExpiry: record.robotExpiry as string,
+        robotExpiry: toISOString(record.robotExpiry),
         monthlyRobotHoursConsumed: record.monthlyRobotHoursConsumed as number,
         agenticUnits: record.agenticUnits as number,
         agenticUnitsConsumed: record.agenticUnitsConsumed as number,
-        agenticUnitExpiry: record.agenticUnitExpiry as string,
+        agenticUnitExpiry: toISOString(record.agenticUnitExpiry),
         aiUnits: record.aiUnits as number,
         aiUnitsConsumed: record.aiUnitsConsumed as number,
-        aiUnitExpiry: record.aiUnitExpiry as string,
+        aiUnitExpiry: toISOString(record.aiUnitExpiry),
         platformUnits: record.platformUnits as number,
         platformUnitsConsumed: record.platformUnitsConsumed as number,
-        platformUnitExpiry: record.platformUnitExpiry as string,
+        platformUnitExpiry: toISOString(record.platformUnitExpiry),
         duUnits: record.duUnits as number,
         duUnitsConsumed: record.duUnitsConsumed as number,
-        duUnitExpiry: record.duUnitExpiry as string,
+        duUnitExpiry: toISOString(record.duUnitExpiry),
       }));
       return accounts;
     } catch (error) {
