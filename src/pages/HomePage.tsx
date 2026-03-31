@@ -92,24 +92,29 @@ export function HomePage() {
     };
   }, [riskProfiles]);
   const riskDistributionData = useMemo(() => {
-    const highRisk = riskProfiles.filter(p => p.overallRisk === 'high').length;
-    const mediumRisk = riskProfiles.filter(p => p.overallRisk === 'medium').length;
-    const lowRisk = riskProfiles.filter(p => p.overallRisk === 'low').length;
+    const highRisk = filteredProfiles.filter(p => p.overallRisk === 'high').length;
+    const mediumRisk = filteredProfiles.filter(p => p.overallRisk === 'medium').length;
+    const lowRisk = filteredProfiles.filter(p => p.overallRisk === 'low').length;
     return [
       { name: 'High Risk', value: highRisk, color: RISK_COLORS.high },
       { name: 'Medium Risk', value: mediumRisk, color: RISK_COLORS.medium },
       { name: 'Low Risk', value: lowRisk, color: RISK_COLORS.low },
     ];
-  }, [riskProfiles]);
+  }, [filteredProfiles]);
   const unitRiskData = useMemo(() => {
+    const robotRisk = filteredProfiles.filter(p => p.robots && (p.robots.overallRisk === 'high' || p.robots.overallRisk === 'medium')).length;
+    const agenticRisk = filteredProfiles.filter(p => p.agenticUnits && (p.agenticUnits.overallRisk === 'high' || p.agenticUnits.overallRisk === 'medium')).length;
+    const aiRisk = filteredProfiles.filter(p => p.aiUnits && (p.aiUnits.overallRisk === 'high' || p.aiUnits.overallRisk === 'medium')).length;
+    const platformRisk = filteredProfiles.filter(p => p.platformUnits && (p.platformUnits.overallRisk === 'high' || p.platformUnits.overallRisk === 'medium')).length;
+    const duRisk = filteredProfiles.filter(p => p.duUnits && (p.duUnits.overallRisk === 'high' || p.duUnits.overallRisk === 'medium')).length;
     return [
-      { name: 'Robots', risk: kpis.robotRisk },
-      { name: 'Agentic', risk: kpis.agenticRisk },
-      { name: 'AI Units', risk: kpis.aiRisk },
-      { name: 'Platform', risk: kpis.platformRisk },
-      { name: 'DU Units', risk: kpis.duRisk },
+      { name: 'Robots', risk: robotRisk },
+      { name: 'Agentic', risk: agenticRisk },
+      { name: 'AI Units', risk: aiRisk },
+      { name: 'Platform', risk: platformRisk },
+      { name: 'DU Units', risk: duRisk },
     ];
-  }, [kpis]);
+  }, [filteredProfiles]);
   const topRiskAccounts = useMemo(() => {
     return [...filteredProfiles]
       .filter(p => p.overallRisk === 'high' || p.overallRisk === 'medium')
