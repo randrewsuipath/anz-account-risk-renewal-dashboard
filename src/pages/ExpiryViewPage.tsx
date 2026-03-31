@@ -25,7 +25,6 @@ export function ExpiryViewPage() {
   const [expiryWindow, setExpiryWindow] = useState<number>(90);
   const [loading, setLoading] = useState(true);
   const [accounts, setAccounts] = useState<AccountData[]>([]);
-
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
@@ -56,9 +55,9 @@ export function ExpiryViewPage() {
           unitType: 'Robots',
           expiryDate: profile.robots.expiryDate,
           daysUntilExpiry: profile.robots.daysUntilExpiry,
-          utilization: profile.robots.utilization24x7 ?? 0,
-          purchased: profile.robots.robots ?? 0,
-          consumed: profile.robots.monthlyHoursConsumed ?? 0,
+          utilization: profile.robots.utilization24x7,
+          purchased: profile.robots.robots,
+          consumed: profile.robots.monthlyHoursConsumed,
         });
       }
       if (profile.agenticUnits && profile.agenticUnits.daysUntilExpiry <= expiryWindow) {
@@ -70,9 +69,9 @@ export function ExpiryViewPage() {
           unitType: 'Agentic Units',
           expiryDate: profile.agenticUnits.expiryDate,
           daysUntilExpiry: profile.agenticUnits.daysUntilExpiry,
-          utilization: profile.agenticUnits.utilization ?? 0,
-          purchased: profile.agenticUnits.purchased ?? 0,
-          consumed: profile.agenticUnits.consumed ?? 0,
+          utilization: profile.agenticUnits.utilization,
+          purchased: profile.agenticUnits.purchased,
+          consumed: profile.agenticUnits.consumed,
         });
       }
       if (profile.aiUnits && profile.aiUnits.daysUntilExpiry <= expiryWindow) {
@@ -84,9 +83,9 @@ export function ExpiryViewPage() {
           unitType: 'AI Units',
           expiryDate: profile.aiUnits.expiryDate,
           daysUntilExpiry: profile.aiUnits.daysUntilExpiry,
-          utilization: profile.aiUnits.utilization ?? 0,
-          purchased: profile.aiUnits.purchased ?? 0,
-          consumed: profile.aiUnits.consumed ?? 0,
+          utilization: profile.aiUnits.utilization,
+          purchased: profile.aiUnits.purchased,
+          consumed: profile.aiUnits.consumed,
         });
       }
       if (profile.platformUnits && profile.platformUnits.daysUntilExpiry <= expiryWindow) {
@@ -98,9 +97,9 @@ export function ExpiryViewPage() {
           unitType: 'Platform Units',
           expiryDate: profile.platformUnits.expiryDate,
           daysUntilExpiry: profile.platformUnits.daysUntilExpiry,
-          utilization: profile.platformUnits.utilization ?? 0,
-          purchased: profile.platformUnits.purchased ?? 0,
-          consumed: profile.platformUnits.consumed ?? 0,
+          utilization: profile.platformUnits.utilization,
+          purchased: profile.platformUnits.purchased,
+          consumed: profile.platformUnits.consumed,
         });
       }
       if (profile.duUnits && profile.duUnits.daysUntilExpiry <= expiryWindow) {
@@ -112,9 +111,9 @@ export function ExpiryViewPage() {
           unitType: 'DU Units',
           expiryDate: profile.duUnits.expiryDate,
           daysUntilExpiry: profile.duUnits.daysUntilExpiry,
-          utilization: profile.duUnits.utilization ?? 0,
-          purchased: profile.duUnits.purchased ?? 0,
-          consumed: profile.duUnits.consumed ?? 0,
+          utilization: profile.duUnits.utilization,
+          purchased: profile.duUnits.purchased,
+          consumed: profile.duUnits.consumed,
         });
       }
     });
@@ -135,7 +134,6 @@ export function ExpiryViewPage() {
       </AppLayout>
     );
   }
-
   return (
     <AppLayout container>
       <div className="space-y-6">
@@ -193,11 +191,11 @@ export function ExpiryViewPage() {
                     </div>
                     <div>
                       <p className="text-xs text-gray-500">Utilization</p>
-                      <p className="font-medium text-gray-900">{Math.round((item.utilization ?? 0) * 100)}%</p>
+                      <p className="font-medium text-gray-900">{isNaN(item.utilization) || item.utilization == null ? '—' : Math.round(item.utilization * 100) + '%'}</p>
                     </div>
                     <div>
                       <p className="text-xs text-gray-500">Consumed / Purchased</p>
-                      <p className="font-medium text-gray-900">{(item.consumed ?? 0).toLocaleString()} / {(item.purchased ?? 0).toLocaleString()}</p>
+                      <p className="font-medium text-gray-900">{item.consumed == null ? '—' : item.consumed.toLocaleString()} / {item.purchased == null ? '—' : item.purchased.toLocaleString()}</p>
                     </div>
                   </div>
                 </div>
