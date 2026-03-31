@@ -215,19 +215,19 @@ export function AccountsListPage() {
                       {profile.primaryRiskDriver}
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">
-                      {profile.robots ? `${Math.round(profile.robots.utilization24x7 * 100)}%` : '—'}
+                      {profile.robots && !isNaN(profile.robots.utilization24x7) && profile.robots.utilization24x7 != null ? `${Math.round(profile.robots.utilization24x7 * 100)}%` : '—'}
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">
-                      {profile.agenticUnits ? `${Math.round(profile.agenticUnits.utilization * 100)}%` : '—'}
+                      {profile.agenticUnits && !isNaN(profile.agenticUnits.utilization) && profile.agenticUnits.utilization != null ? `${Math.round(profile.agenticUnits.utilization * 100)}%` : '—'}
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">
-                      {profile.aiUnits ? `${Math.round(profile.aiUnits.utilization * 100)}%` : '—'}
+                      {profile.aiUnits && !isNaN(profile.aiUnits.utilization) && profile.aiUnits.utilization != null ? `${Math.round(profile.aiUnits.utilization * 100)}%` : '—'}
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">
-                      {profile.platformUnits ? `${Math.round(profile.platformUnits.utilization * 100)}%` : '—'}
+                      {profile.platformUnits && !isNaN(profile.platformUnits.utilization) && profile.platformUnits.utilization != null ? `${Math.round(profile.platformUnits.utilization * 100)}%` : '—'}
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">
-                      {profile.duUnits ? `${Math.round(profile.duUnits.utilization * 100)}%` : '—'}
+                      {profile.duUnits && !isNaN(profile.duUnits.utilization) && profile.duUnits.utilization != null ? `${Math.round(profile.duUnits.utilization * 100)}%` : '—'}
                     </td>
                     <td className="px-4 py-3 text-sm">
                       <Link to={`/account/${profile.accountId}`}>
