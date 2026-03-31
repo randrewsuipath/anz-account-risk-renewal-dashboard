@@ -1,7 +1,7 @@
 import type { AccountData } from '../types/account';
 import type { UiPath } from '@uipath/uipath-typescript/core';
 import { Entities } from '@uipath/uipath-typescript/entities';
-import type { EntityRecord } from '@uipath/uipath-typescript/entities';
+import type { EntityRecord, PaginatedResponse } from '@uipath/uipath-typescript/entities';
 import accountsData from '../data/accounts.json';
 /**
  * Data service interface for account data retrieval
@@ -122,27 +122,51 @@ export class DataFabricService implements DataService {
         displayName: (targetEntity as any).displayName || 'N/A',
         type: (targetEntity as any).type || 'N/A',
       });
-      // Step 7: Fetch Entity Records
+      // Step 7: Fetch Entity Records with Pagination
       const entityId = targetEntity.id;
-      console.log('[DataFabric] Step 7: Fetching Entity Records');
+      console.log('[DataFabric] Step 7: Fetching Entity Records (with pagination)');
       console.log('  Entity UUID:', entityId);
-      console.log('  API Call: GET /entities/' + entityId + '/records');
-      const records = await this.entities.getAllRecords(entityId);
-      console.log('  ✓ Records Retrieved Successfully');
-      console.log('  Total Records:', records.items?.length || 0);
-      if (records.items && records.items.length > 0) {
-        console.log('  Sample Record Fields:', Object.keys(records.items[0]).join(', '));
+      
+      let allRecords: EntityRecord[] = [];
+      let currentCursor: string | undefined = undefined;
+      let pageNumber = 1;
+      let hasMorePages = true;
+      
+      while (hasMorePages) {
+        const cursorLog = currentCursor ? currentCursor.substring(0, 20) + '...' : 'initial';
+        console.log(`  Fetching page ${pageNumber} (cursor: ${cursorLog})`);
+        console.log(`  API Call: GET /entities/${entityId}/records?pageSize=100${currentCursor ? '&cursor=' + currentCursor : ''}`);
+        
+        const pageResponse = await this.entities.getAllRecords(entityId, {
+          pageSize: 100,
+          cursor: currentCursor ? { value: currentCursor } : undefined,
+        });
+        
+        const pageItems = pageResponse.items || [];
+        allRecords = allRecords.concat(pageItems);
+        console.log(`  ✓ Page ${pageNumber} retrieved: ${pageItems.length} records`);
+        
+        hasMorePages = pageResponse.hasNextPage || false;
+        currentCursor = pageResponse.nextCursor?.value;
+        pageNumber++;
+      }
+      
+      console.log(`  ✓ Records Retrieved Successfully`);
+      console.log(`  Total records fetched across ${pageNumber - 1} pages: ${allRecords.length}`);
+      
+      if (allRecords.length > 0) {
+        console.log('  Sample Record Fields:', Object.keys(allRecords[0]).join(', '));
         console.log('  First Record Preview:', {
-          accountName: records.items[0].accountName,
-          accountId: records.items[0].accountId,
-          csm: records.items[0].csm,
+          accountName: allRecords[0].accountName,
+          accountId: allRecords[0].accountId,
+          csm: allRecords[0].csm,
         });
       } else {
         console.warn('  ⚠ No records found in entity');
       }
       // Step 8: Map Records to AccountData
       console.log('[DataFabric] Step 8: Mapping Records to AccountData Interface');
-      const accounts: AccountData[] = (records.items || []).map((record: EntityRecord, index: number) => {
+      const accounts: AccountData[] = allRecords.map((record: EntityRecord, index: number) => {
         if (index === 0) {
           console.log('  Mapping first record as example...');
         }
