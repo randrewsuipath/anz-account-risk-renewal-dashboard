@@ -23,19 +23,19 @@ function UnitCard({ title, unit }: { title: string; unit: UnitUtilization }) {
         <div className="grid grid-cols-2 gap-4">
           <div>
             <p className="text-xs text-gray-500">Purchased</p>
-            <p className="text-xl font-bold text-gray-900">{unit.purchased.toLocaleString()}</p>
+            <p className="text-xl font-bold text-gray-900">{unit.purchased?.toLocaleString() ?? '0'}</p>
           </div>
           <div>
             <p className="text-xs text-gray-500">Consumed</p>
-            <p className="text-xl font-bold text-gray-900">{unit.consumed.toLocaleString()}</p>
+            <p className="text-xl font-bold text-gray-900">{unit.consumed?.toLocaleString() ?? '0'}</p>
           </div>
         </div>
         <div>
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs text-gray-500">Utilization</span>
-            <span className="text-sm font-semibold text-gray-900">{Math.round(unit.utilization * 100)}%</span>
+            <span className="text-sm font-semibold text-gray-900">{Math.round((unit.utilization ?? 0) * 100)}%</span>
           </div>
-          <Progress value={unit.utilization * 100} className="h-2" />
+          <Progress value={(unit.utilization ?? 0) * 100} className="h-2" />
         </div>
         <div className="flex items-center gap-2 text-sm">
           <Calendar className="w-4 h-4 text-gray-400" />
@@ -65,18 +65,18 @@ function RobotCard({ robots }: { robots: RobotUtilization }) {
           </div>
           <div>
             <p className="text-xs text-gray-500">Monthly Hours</p>
-            <p className="text-xl font-bold text-gray-900">{robots.monthlyHoursConsumed.toLocaleString()}</p>
+            <p className="text-xl font-bold text-gray-900">{robots.monthlyHoursConsumed?.toLocaleString() ?? '0'}</p>
           </div>
         </div>
         <div className="space-y-3">
           <div>
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs text-gray-500">24/7 Utilization</span>
-              <span className="text-sm font-semibold text-gray-900">{Math.round(robots.utilization24x7 * 100)}%</span>
+              <span className="text-sm font-semibold text-gray-900">{Math.round((robots.utilization24x7 ?? 0) * 100)}%</span>
             </div>
-            <Progress value={robots.utilization24x7 * 100} className="h-2" />
+            <Progress value={(robots.utilization24x7 ?? 0) * 100} className="h-2" />
             <div className="flex items-center justify-between mt-1">
-              <span className="text-xs text-gray-400">Capacity: {(robots.robots * 5040).toLocaleString()} hrs/mo</span>
+              <span className="text-xs text-gray-400">Capacity: {((robots.robots ?? 0) * 5040).toLocaleString()} hrs/mo</span>
               <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium ${getRiskColor(robots.utilizationRisk24x7)}`}>
                 {robots.utilizationRisk24x7.toUpperCase()}
               </span>
@@ -85,11 +85,11 @@ function RobotCard({ robots }: { robots: RobotUtilization }) {
           <div>
             <div className="flex items-center justify-between mb-2">
               <span className="text-xs text-gray-500">Business Hours (8/5/20)</span>
-              <span className="text-sm font-semibold text-gray-900">{Math.round(robots.utilizationBusiness * 100)}%</span>
+              <span className="text-sm font-semibold text-gray-900">{Math.round((robots.utilizationBusiness ?? 0) * 100)}%</span>
             </div>
-            <Progress value={robots.utilizationBusiness * 100} className="h-2" />
+            <Progress value={(robots.utilizationBusiness ?? 0) * 100} className="h-2" />
             <div className="flex items-center justify-between mt-1">
-              <span className="text-xs text-gray-400">Capacity: {(robots.robots * 160).toLocaleString()} hrs/mo</span>
+              <span className="text-xs text-gray-400">Capacity: {((robots.robots ?? 0) * 160).toLocaleString()} hrs/mo</span>
               <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium ${getRiskColor(robots.utilizationRiskBusiness)}`}>
                 {robots.utilizationRiskBusiness.toUpperCase()}
               </span>
@@ -129,7 +129,10 @@ export function AccountDetailPage() {
     fetchData();
   }, [sdk]);
 
-  const account = useMemo(() => accounts.find(a => a.accountId === accountId), [accounts, accountId]);
+  const account = useMemo(() => {
+    const found = accounts.find(a => a.accountId === accountId);
+    return found;
+  }, [accounts, accountId]);
   const profile = useMemo(() => {
     if (!account) return null;
     return calculateAccountRiskProfile(account);
