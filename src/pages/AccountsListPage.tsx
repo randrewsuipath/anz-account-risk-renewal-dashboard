@@ -231,7 +231,7 @@ export function AccountsListPage() {
                     </td>
                     <td className="px-4 py-3 text-sm">
                       <Link to={`/account/${profile.accountId}`}>
-                        <Button variant="outline" size="sm">View</Button>
+                        <Button variant="outline" size="sm">View Details</Button>
                       </Link>
                     </td>
                   </tr>
