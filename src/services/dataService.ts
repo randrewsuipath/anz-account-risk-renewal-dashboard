@@ -43,128 +43,187 @@ function toISOString(value: unknown): string {
   }
   return '';
 }
-
 /**
  * Data Fabric service implementation
  * Fetches account data from UiPath Data Fabric entity 'anzlicenseutilisation'
  */
 export class DataFabricService implements DataService {
   private entities: Entities;
+  private sdk: UiPath;
   constructor(sdk: UiPath) {
+    this.sdk = sdk;
     this.entities = new Entities(sdk);
+    console.log('[DataFabric Init] ✓ DataFabricService initialized');
   }
   async getAllAccounts(): Promise<AccountData[]> {
+    const entityName = 'anzlicenseutilisation';
+    console.group('[DataFabric] Starting account fetch from entity: ' + entityName);
     try {
-      // Debug logging for SDK configuration and authentication
-      console.log('[DataFabric Debug] SDK Configuration:', {
-        baseUrl: (this.entities as any).sdk?.config?.baseUrl || 'N/A',
-        orgName: (this.entities as any).sdk?.config?.orgName || 'N/A',
-        tenantName: (this.entities as any).sdk?.config?.tenantName || 'N/A',
+      // Step 1: Verify SDK Configuration
+      console.log('[DataFabric] Step 1: Verifying SDK Configuration');
+      const config = {
+        baseUrl: this.sdk.config?.baseUrl || 'N/A',
+        orgName: this.sdk.config?.orgName || 'N/A',
+        tenantName: this.sdk.config?.tenantName || 'N/A',
+        clientId: this.sdk.config?.clientId || 'N/A',
+        redirectUri: this.sdk.config?.redirectUri || 'N/A',
+      };
+      console.table(config);
+      // Step 2: Verify Authentication Status
+      console.log('[DataFabric] Step 2: Verifying Authentication Status');
+      const isAuthenticated = typeof this.sdk.isAuthenticated === 'function' 
+        ? this.sdk.isAuthenticated() 
+        : 'Unable to determine';
+      console.log('  ✓ SDK Authenticated:', isAuthenticated);
+      // Step 3: Check Access Token Presence
+      console.log('[DataFabric] Step 3: Checking Access Token');
+      const accessToken = this.sdk.getToken?.() || (this.sdk as any).accessToken || (this.sdk.config as any)?.accessToken;
+      if (accessToken) {
+        console.log('  ✓ Access Token Present: Yes (first 20 chars):', accessToken.substring(0, 20) + '...');
+        console.log('  ✓ Token Length:', accessToken.length, 'characters');
+      } else {
+        console.error('  ✗ Access Token Present: NO - This will cause API calls to fail');
+      }
+      // Step 4: Verify OAuth Scopes (if available)
+      console.log('[DataFabric] Step 4: Verifying OAuth Scopes');
+      const requiredScopes = ['DataFabric.Data.Read', 'DataFabric.Schema.Read'];
+      const configuredScope = this.sdk.config?.scope || import.meta.env.VITE_UIPATH_SCOPE || '';
+      console.log('  Configured Scope String:', configuredScope);
+      requiredScopes.forEach(scope => {
+        const hasScope = configuredScope.includes(scope);
+        console.log(`  ${hasScope ? '✓' : '✗'} ${scope}:`, hasScope ? 'Present' : 'MISSING');
       });
-      
-      console.log('[DataFabric Debug] Authentication Status:', 
-        typeof (this.entities as any).sdk?.isAuthenticated === 'function' 
-          ? (this.entities as any).sdk.isAuthenticated() 
-          : 'Unable to determine'
-      );
-      
-      // Log access token (first 20 chars only for security)
-      const accessToken = (this.entities as any).sdk?.config?.accessToken || 
-                         (this.entities as any).sdk?.accessToken;
-      console.log('[DataFabric Debug] Access Token (first 20 chars):', 
-        accessToken ? accessToken.substring(0, 20) + '...' : 'No token found'
-      );
-      
-      const entityName = 'anzlicenseutilisation';
-      console.log('[DataFabric Debug] Searching for entity:', entityName);
-      
-      // Step 1: Get all entities
+      // Step 5: Fetch All Entities
+      console.log('[DataFabric] Step 5: Fetching All Entities');
+      console.log('  API Call: GET /entities');
       const allEntities = await this.entities.getAll();
-      console.log('[DataFabric Debug] Number of entities found:', allEntities.length);
-      
-      // Step 2: Find the entity with name 'anzlicenseutilisation' (case-insensitive)
+      console.log('  ✓ Total Entities Found:', allEntities.length);
+      console.log('  Available Entity Names:', allEntities.map((e: any) => e.name || 'unnamed').join(', '));
+      // Step 6: Find Target Entity
+      console.log('[DataFabric] Step 6: Searching for Target Entity');
+      console.log('  Looking for entity name (case-insensitive):', entityName);
       const targetEntity = allEntities.find(
         (entity: any) => entity.name?.toLowerCase() === entityName.toLowerCase()
       );
-      
       if (!targetEntity) {
-        console.error('[DataFabric Debug] Entity not found. Available entities:', 
-          allEntities.map((e: any) => e.name || 'unnamed').join(', ')
-        );
+        console.error('  ✗ Entity NOT FOUND');
+        console.error('  Available entities:', allEntities.map((e: any) => e.name || 'unnamed'));
+        console.groupEnd();
         throw new Error(
           `Entity '${entityName}' not found in Data Fabric. Available entities: ${
             allEntities.map((e: any) => e.name || 'unnamed').join(', ')
           }`
         );
       }
-      
-      // Step 3: Extract the entity UUID
-      const entityId = targetEntity.id;
-      console.log('[DataFabric Debug] Entity found:', {
+      console.log('  ✓ Entity Found:', targetEntity.name);
+      console.log('  Entity Details:', {
+        id: targetEntity.id,
         name: targetEntity.name,
-        id: entityId
+        displayName: (targetEntity as any).displayName || 'N/A',
+        type: (targetEntity as any).type || 'N/A',
       });
-      
-      // Step 4: Fetch all records using the entity UUID
-      console.log('[DataFabric Debug] Fetching records for entity UUID:', entityId);
+      // Step 7: Fetch Entity Records
+      const entityId = targetEntity.id;
+      console.log('[DataFabric] Step 7: Fetching Entity Records');
+      console.log('  Entity UUID:', entityId);
+      console.log('  API Call: GET /entities/' + entityId + '/records');
       const records = await this.entities.getAllRecords(entityId);
-      console.log('[DataFabric Debug] Number of records retrieved:', records.items?.length || 0);
-      // Map entity records to AccountData interface
-      // Field names in the entity match the AccountData interface exactly
-      const accounts: AccountData[] = (records.items || []).map((record: EntityRecord) => ({
-        accountName: record.accountName as string,
-        accountId: record.accountId as string,
-        csm: record.csm as string,
-        accountDirector: record.accountDirector as string,
-        robots: record.robots as number,
-        robotExpiry: toISOString(record.robotExpiry),
-        monthlyRobotHoursConsumed: record.monthlyRobotHoursConsumed as number,
-        agenticUnits: record.agenticUnits as number,
-        agenticUnitsConsumed: record.agenticUnitsConsumed as number,
-        agenticUnitExpiry: toISOString(record.agenticUnitExpiry),
-        aiUnits: record.aiUnits as number,
-        aiUnitsConsumed: record.aiUnitsConsumed as number,
-        aiUnitExpiry: toISOString(record.aiUnitExpiry),
-        platformUnits: record.platformUnits as number,
-        platformUnitsConsumed: record.platformUnitsConsumed as number,
-        platformUnitExpiry: toISOString(record.platformUnitExpiry),
-        duUnits: record.duUnits as number,
-        duUnitsConsumed: record.duUnitsConsumed as number,
-        duUnitExpiry: toISOString(record.duUnitExpiry),
-      }));
+      console.log('  ✓ Records Retrieved Successfully');
+      console.log('  Total Records:', records.items?.length || 0);
+      if (records.items && records.items.length > 0) {
+        console.log('  Sample Record Fields:', Object.keys(records.items[0]).join(', '));
+        console.log('  First Record Preview:', {
+          accountName: records.items[0].accountName,
+          accountId: records.items[0].accountId,
+          csm: records.items[0].csm,
+        });
+      } else {
+        console.warn('  ⚠ No records found in entity');
+      }
+      // Step 8: Map Records to AccountData
+      console.log('[DataFabric] Step 8: Mapping Records to AccountData Interface');
+      const accounts: AccountData[] = (records.items || []).map((record: EntityRecord, index: number) => {
+        if (index === 0) {
+          console.log('  Mapping first record as example...');
+        }
+        return {
+          accountName: record.accountName as string,
+          accountId: record.accountId as string,
+          csm: record.csm as string,
+          accountDirector: record.accountDirector as string,
+          robots: record.robots as number,
+          robotExpiry: toISOString(record.robotExpiry),
+          monthlyRobotHoursConsumed: record.monthlyRobotHoursConsumed as number,
+          agenticUnits: record.agenticUnits as number,
+          agenticUnitsConsumed: record.agenticUnitsConsumed as number,
+          agenticUnitExpiry: toISOString(record.agenticUnitExpiry),
+          aiUnits: record.aiUnits as number,
+          aiUnitsConsumed: record.aiUnitsConsumed as number,
+          aiUnitExpiry: toISOString(record.aiUnitExpiry),
+          platformUnits: record.platformUnits as number,
+          platformUnitsConsumed: record.platformUnitsConsumed as number,
+          platformUnitExpiry: toISOString(record.platformUnitExpiry),
+          duUnits: record.duUnits as number,
+          duUnitsConsumed: record.duUnitsConsumed as number,
+          duUnitExpiry: toISOString(record.duUnitExpiry),
+        };
+      });
+      console.log('  ✓ Successfully Mapped', accounts.length, 'accounts');
+      console.log('[DataFabric] ✓✓✓ FETCH COMPLETED SUCCESSFULLY ✓✓✓');
+      console.groupEnd();
       return accounts;
     } catch (error) {
-      console.error('[DataFabric Debug] Error fetching accounts from Data Fabric:', error);
-      
-      // Extract and log detailed error information
+      console.error('[DataFabric] ✗✗✗ FETCH FAILED ✗✗✗');
+      console.error('[DataFabric] Error Type:', error?.constructor?.name || 'Unknown');
       if (error && typeof error === 'object') {
         const errorObj = error as any;
-        
-        console.error('[DataFabric Debug] Error Details:', {
-          message: errorObj.message || 'No message',
-          statusCode: errorObj.statusCode || errorObj.status || 'No status code',
-          name: errorObj.name || 'Unknown error type',
-        });
-        
-        // Log response body if available
+        // Log all available error properties
+        console.group('[DataFabric] Detailed Error Information');
+        console.log('Message:', errorObj.message || 'No message');
+        console.log('Name:', errorObj.name || 'Unknown');
+        console.log('Status Code:', errorObj.statusCode || errorObj.status || errorObj.code || 'No status code');
+        console.log('Status Text:', errorObj.statusText || 'No status text');
+        // Log response details if available
         if (errorObj.response) {
-          console.error('[DataFabric Debug] Response Body:', errorObj.response);
+          console.group('Response Object');
+          console.log('Status:', errorObj.response.status);
+          console.log('Status Text:', errorObj.response.statusText);
+          console.log('Headers:', errorObj.response.headers);
+          console.log('Data:', errorObj.response.data);
+          console.groupEnd();
         }
-        
-        // Log response data if available
+        // Log request details if available
+        if (errorObj.config) {
+          console.group('Request Configuration');
+          console.log('URL:', errorObj.config.url);
+          console.log('Method:', errorObj.config.method);
+          console.log('Headers:', errorObj.config.headers);
+          console.groupEnd();
+        }
+        // Log raw error data
         if (errorObj.data) {
-          console.error('[DataFabric Debug] Response Data:', errorObj.data);
+          console.log('Error Data:', errorObj.data);
         }
-        
-        // Log headers if available
-        if (errorObj.headers) {
-          console.error('[DataFabric Debug] Response Headers:', errorObj.headers);
+        // Log error body if available
+        if (errorObj.body) {
+          console.log('Error Body:', errorObj.body);
         }
-        
+        // Log stack trace
+        if (errorObj.stack) {
+          console.log('Stack Trace:', errorObj.stack);
+        }
         // Log full error object for comprehensive debugging
-        console.error('[DataFabric Debug] Full Error Object:', JSON.stringify(errorObj, null, 2));
+        console.group('Full Error Object (JSON)');
+        try {
+          console.log(JSON.stringify(errorObj, null, 2));
+        } catch (stringifyError) {
+          console.log('Unable to stringify error object:', stringifyError);
+          console.log('Raw error object:', errorObj);
+        }
+        console.groupEnd();
+        console.groupEnd();
       }
-      
+      console.groupEnd();
       throw new Error(
         `Failed to fetch accounts from Data Fabric: ${
           error instanceof Error ? error.message : 'Unknown error'
@@ -185,9 +244,12 @@ export function getDataService(
 ): DataService {
   if (useFabric) {
     if (!sdk) {
+      console.error('[DataService Factory] ✗ SDK instance is required for Data Fabric service but was not provided');
       throw new Error('SDK instance is required for Data Fabric service');
     }
+    console.log('[DataService Factory] ✓ Creating DataFabricService instance');
     return new DataFabricService(sdk);
   }
+  console.log('[DataService Factory] ✓ Using StaticDataService (JSON file)');
   return new StaticDataService();
 }
