@@ -16,7 +16,6 @@ const RISK_COLORS = {
   medium: '#ca8a04',
   low: '#16a34a',
 };
-
 export function HomePage() {
   const { sdk } = useAuth();
   const [loading, setLoading] = useState(true);
@@ -29,7 +28,6 @@ export function HomePage() {
     unitType: 'all',
     accountDirector: 'all',
   });
-
   React.useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
@@ -45,7 +43,6 @@ export function HomePage() {
     };
     fetchData();
   }, [sdk]);
-
   const riskProfiles = useMemo(() => {
     return accounts.map(calculateAccountRiskProfile);
   }, [accounts]);
@@ -128,11 +125,9 @@ export function HomePage() {
   const uniqueCSMs = useMemo(() => {
     return Array.from(new Set(accounts.map(a => a.csm))).sort();
   }, [accounts]);
-
   const uniqueAccountDirectors = useMemo(() => {
     return Array.from(new Set(accounts.map(a => a.accountDirector))).sort();
   }, [accounts]);
-
   if (loading) {
     return (
       <AppLayout container>
@@ -142,7 +137,6 @@ export function HomePage() {
       </AppLayout>
     );
   }
-
   return (
     <AppLayout container>
       <div className="space-y-6">
@@ -152,76 +146,7 @@ export function HomePage() {
             <p className="text-sm text-gray-500 mt-1">Executive overview of license consumption and renewal risk</p>
           </div>
         </div>
-        <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">CSM</label>
-              <Select value={filters.csm} onValueChange={(value) => setFilters(prev => ({ ...prev, csm: value }))}>
-                <SelectTrigger className="bg-white">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All CSMs</SelectItem>
-                  {uniqueCSMs.map(csm => (
-                    <SelectItem key={csm} value={csm}>{csm}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Account Director</label>
-              <Select value={filters.accountDirector} onValueChange={(value) => setFilters(prev => ({ ...prev, accountDirector: value }))}>
-                <SelectTrigger className="bg-white">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Directors</SelectItem>
-                  {uniqueAccountDirectors.map(director => (
-                    <SelectItem key={director} value={director}>{director}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Risk Level</label>
-              <Select value={filters.riskType} onValueChange={(value) => setFilters(prev => ({ ...prev, riskType: value as RiskLevel | 'all' }))}>
-                <SelectTrigger className="bg-white">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Risks</SelectItem>
-                  <SelectItem value="high">High Risk</SelectItem>
-                  <SelectItem value="medium">Medium Risk</SelectItem>
-                  <SelectItem value="low">Low Risk</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Expiry Window</label>
-              <Select value={String(filters.expiryWindow)} onValueChange={(value) => setFilters(prev => ({ ...prev, expiryWindow: value === 'all' ? 'all' : Number(value) }))}>
-                <SelectTrigger className="bg-white">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Dates</SelectItem>
-                  <SelectItem value="30">30 Days</SelectItem>
-                  <SelectItem value="60">60 Days</SelectItem>
-                  <SelectItem value="90">90 Days</SelectItem>
-                  <SelectItem value="180">180 Days</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-700 mb-1">Account Name</label>
-              <Input
-                placeholder="Search accounts..."
-                value={filters.accountName}
-                onChange={(e) => setFilters(prev => ({ ...prev, accountName: e.target.value }))}
-                className="bg-white"
-              />
-            </div>
-          </div>
-        </div>
+        {/* KPI Summary Cards - Moved above filters */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <Card className="p-4 border border-gray-200">
             <div className="flex items-center gap-3">
@@ -291,6 +216,77 @@ export function HomePage() {
               <p className="text-2xl font-bold text-gray-900">{kpis.duRisk}</p>
             </div>
           </Card>
+        </div>
+        {/* Filters Section - Moved below KPI cards */}
+        <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">CSM</label>
+              <Select value={filters.csm} onValueChange={(value) => setFilters(prev => ({ ...prev, csm: value }))}>
+                <SelectTrigger className="bg-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All CSMs</SelectItem>
+                  {uniqueCSMs.map(csm => (
+                    <SelectItem key={csm} value={csm}>{csm}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Account Director</label>
+              <Select value={filters.accountDirector} onValueChange={(value) => setFilters(prev => ({ ...prev, accountDirector: value }))}>
+                <SelectTrigger className="bg-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Directors</SelectItem>
+                  {uniqueAccountDirectors.map(director => (
+                    <SelectItem key={director} value={director}>{director}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Risk Level</label>
+              <Select value={filters.riskType} onValueChange={(value) => setFilters(prev => ({ ...prev, riskType: value as RiskLevel | 'all' }))}>
+                <SelectTrigger className="bg-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Risks</SelectItem>
+                  <SelectItem value="high">High Risk</SelectItem>
+                  <SelectItem value="medium">Medium Risk</SelectItem>
+                  <SelectItem value="low">Low Risk</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Expiry Window</label>
+              <Select value={String(filters.expiryWindow)} onValueChange={(value) => setFilters(prev => ({ ...prev, expiryWindow: value === 'all' ? 'all' : Number(value) }))}>
+                <SelectTrigger className="bg-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Dates</SelectItem>
+                  <SelectItem value="30">30 Days</SelectItem>
+                  <SelectItem value="60">60 Days</SelectItem>
+                  <SelectItem value="90">90 Days</SelectItem>
+                  <SelectItem value="180">180 Days</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">Account Name</label>
+              <Input
+                placeholder="Search accounts..."
+                value={filters.accountName}
+                onChange={(e) => setFilters(prev => ({ ...prev, accountName: e.target.value }))}
+                className="bg-white"
+              />
+            </div>
+          </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <Card className="p-6 border border-gray-200">
