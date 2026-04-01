@@ -1,6 +1,6 @@
 # ANZ Account Risk & Renewal Dashboard
 A production-quality executive dashboard for ANZ sales leadership that provides comprehensive visibility into account license consumption, renewal risk, and utilization across all UiPath product units.
-[cloudflarebutton]
+[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/randrewsuipath/anz-account-risk-renewal-dashboard)
 ## Overview
 This application implements sophisticated risk scoring for Agentic Units, AI Units, Platform Units, DU Units, and Robots (with dual utilization models), delivering actionable recommendations to drive renewal conversations and adoption strategies. Built with enterprise-grade design principles, the dashboard features clean information architecture, table-based data display, and professional aesthetics that match UiPath's corporate standards.
 ## Key Features
@@ -301,7 +301,7 @@ The application implements independent risk scoring for each unit type:
 - Low Risk: > 180 days to expiry
 ## Deployment
 ### Cloudflare Pages
-[cloudflarebutton]
+[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/randrewsuipath/anz-account-risk-renewal-dashboard)
 #### Manual Deployment
 1. Build the application:
 ```bash
