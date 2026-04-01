@@ -53,28 +53,19 @@ function generateUnitRecommendation(
 function generateRobotRecommendation(
   robots: RobotUtilization
 ): Recommendation | null {
-  const isLowUtilization24x7 = robots.utilizationRisk24x7 === 'high' || robots.utilizationRisk24x7 === 'medium';
   const isLowUtilizationBusiness = robots.utilizationRiskBusiness === 'high' || robots.utilizationRiskBusiness === 'medium';
   const isNearExpiry = robots.expiryRisk === 'high' || robots.expiryRisk === 'medium';
   let message = '';
   let reason = '';
   let priority: 'high' | 'medium' | 'low' = 'low';
-  if ((isLowUtilization24x7 || isLowUtilizationBusiness) && isNearExpiry) {
+  if (isLowUtilizationBusiness && isNearExpiry) {
     priority = 'high';
-    reason = `24/7: ${Math.round(robots.utilization24x7 * 100)}%, Business: ${Math.round(robots.utilizationBusiness * 100)}%, Expiry: ${robots.daysUntilExpiry} days`;
+    reason = `Business hours utilization: ${Math.round(robots.utilizationBusiness * 100)}%, Expiry: ${robots.daysUntilExpiry} days`;
     message = 'Critical: Robot capacity significantly underutilized with upcoming expiry. Urgent review needed to assess automation pipeline and renewal strategy.';
-  } else if (isLowUtilization24x7 && isLowUtilizationBusiness) {
-    priority = 'high';
-    reason = `24/7: ${Math.round(robots.utilization24x7 * 100)}%, Business: ${Math.round(robots.utilizationBusiness * 100)}%`;
-    message = 'Robot capacity underutilized across all models. Evaluate automation pipeline, scheduling optimization, and attended/unattended workload balance.';
-  } else if (isLowUtilization24x7) {
-    priority = 'medium';
-    reason = `24/7 utilization at ${Math.round(robots.utilization24x7 * 100)}%`;
-    message = 'Robot capacity underutilized in 24/7 model. Consider expanding automation coverage to off-hours or optimizing scheduling strategy.';
   } else if (isLowUtilizationBusiness) {
-    priority = 'medium';
+    priority = 'high';
     reason = `Business hours utilization at ${Math.round(robots.utilizationBusiness * 100)}%`;
-    message = 'Robot usage low during business hours. Review attended automation opportunities and workload distribution across business operations.';
+    message = 'Robot capacity underutilized during business hours. Review attended automation opportunities and workload distribution across business operations.';
   } else if (isNearExpiry) {
     priority = robots.expiryRisk === 'high' ? 'high' : 'medium';
     reason = `Expiry in ${robots.daysUntilExpiry} days with strong utilization`;

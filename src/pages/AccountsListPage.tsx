@@ -24,7 +24,6 @@ export function AccountsListPage() {
   });
   const [sortField, setSortField] = useState<SortField>('accountName');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
-
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
@@ -68,7 +67,6 @@ export function AccountsListPage() {
   const uniqueCSMs = useMemo(() => {
     return Array.from(new Set(accounts.map(a => a.csm))).sort();
   }, [accounts]);
-
   const uniqueAccountDirectors = useMemo(() => {
     return Array.from(new Set(accounts.map(a => a.accountDirector))).sort();
   }, [accounts]);
@@ -89,7 +87,6 @@ export function AccountsListPage() {
       </AppLayout>
     );
   }
-
   return (
     <AppLayout container>
       <div className="space-y-6">
@@ -215,7 +212,7 @@ export function AccountsListPage() {
                       {profile.primaryRiskDriver}
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">
-                      {profile.robots && !isNaN(profile.robots.utilization24x7) && profile.robots.utilization24x7 != null ? `${Math.round(profile.robots.utilization24x7 * 100)}%` : '—'}
+                      {profile.robots && !isNaN(profile.robots.utilizationBusiness) && profile.robots.utilizationBusiness != null ? `${Math.round(profile.robots.utilizationBusiness * 100)}%` : '—'}
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">
                       {profile.agenticUnits && !isNaN(profile.agenticUnits.utilization) && profile.agenticUnits.utilization != null ? `${Math.round(profile.agenticUnits.utilization * 100)}%` : '—'}
