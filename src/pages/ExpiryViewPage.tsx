@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { Calendar, AlertTriangle } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -55,7 +56,7 @@ export function ExpiryViewPage() {
           unitType: 'Robots',
           expiryDate: profile.robots.expiryDate,
           daysUntilExpiry: profile.robots.daysUntilExpiry,
-          utilization: profile.robots.utilization24x7,
+          utilization: profile.robots.utilizationBusiness,
           purchased: profile.robots.robots,
           consumed: profile.robots.monthlyHoursConsumed,
         });
@@ -171,7 +172,12 @@ export function ExpiryViewPage() {
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
-                    <h3 className="text-sm font-semibold text-gray-900">{item.accountName}</h3>
+                    <Link
+                      to={`/account/${item.accountId}`}
+                      className="text-sm font-semibold text-gray-900 hover:text-blue-600 hover:underline"
+                    >
+                      {item.accountName}
+                    </Link>
                     <span className="text-xs px-2 py-0.5 bg-white rounded border border-gray-200 text-gray-700">
                       {item.unitType}
                     </span>

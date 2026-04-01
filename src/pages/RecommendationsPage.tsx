@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { AlertCircle } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -20,7 +21,6 @@ export function RecommendationsPage() {
   const [selectedCSM, setSelectedCSM] = useState<string>('all');
   const [loading, setLoading] = useState(true);
   const [accounts, setAccounts] = useState<AccountData[]>([]);
-
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
@@ -84,7 +84,6 @@ export function RecommendationsPage() {
         return 'bg-gray-100 text-gray-700 border-gray-200';
     }
   };
-
   if (loading) {
     return (
       <AppLayout container>
@@ -94,7 +93,6 @@ export function RecommendationsPage() {
       </AppLayout>
     );
   }
-
   return (
     <AppLayout container>
       <div className="space-y-6">
@@ -178,7 +176,12 @@ export function RecommendationsPage() {
                 </span>
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
-                    <h3 className="text-sm font-semibold text-gray-900">{rec.accountName}</h3>
+                    <Link
+                      to={`/account/${rec.accountId}`}
+                      className="text-sm font-semibold text-gray-900 hover:text-blue-600 hover:underline"
+                    >
+                      {rec.accountName}
+                    </Link>
                     <span className="text-xs text-gray-500">•</span>
                     <span className="text-xs text-gray-500">{rec.csm}</span>
                     <span className="text-xs text-gray-500">•</span>

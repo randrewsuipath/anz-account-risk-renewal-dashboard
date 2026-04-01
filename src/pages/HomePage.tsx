@@ -2,7 +2,6 @@ import React, { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { TrendingDown, AlertTriangle, Calendar, Activity } from 'lucide-react';
 import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -337,14 +336,18 @@ export function HomePage() {
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Account Director</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Risk Level</th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Risk Driver</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {topRiskAccounts.map((profile) => (
                   <tr key={profile.accountId} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 text-sm font-medium text-gray-900 whitespace-nowrap">
-                      {profile.accountName}
+                    <td className="px-4 py-3 text-sm font-medium whitespace-nowrap">
+                      <Link
+                        to={`/account/${profile.accountId}`}
+                        className="text-gray-900 hover:text-blue-600 hover:underline"
+                      >
+                        {profile.accountName}
+                      </Link>
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">
                       {profile.csm}
@@ -359,11 +362,6 @@ export function HomePage() {
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-700">
                       {profile.primaryRiskDriver}
-                    </td>
-                    <td className="px-4 py-3 text-sm">
-                      <Link to={`/account/${profile.accountId}`}>
-                        <Button variant="outline" size="sm">View Details</Button>
-                      </Link>
                     </td>
                   </tr>
                 ))}

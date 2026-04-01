@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -18,7 +19,6 @@ export function RiskAnalysisPage() {
   const [selectedRisk, setSelectedRisk] = useState<RiskLevel | 'all'>('all');
   const [loading, setLoading] = useState(true);
   const [accounts, setAccounts] = useState<AccountData[]>([]);
-
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
@@ -92,7 +92,6 @@ export function RiskAnalysisPage() {
       </AppLayout>
     );
   }
-
   return (
     <AppLayout container>
       <div className="space-y-6">
@@ -191,8 +190,13 @@ export function RiskAnalysisPage() {
               <tbody className="bg-white divide-y divide-gray-200">
                 {filteredAccounts.map((profile) => (
                   <tr key={profile.accountId} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 text-sm font-medium text-gray-900 whitespace-nowrap">
-                      {profile.accountName}
+                    <td className="px-4 py-3 text-sm font-medium whitespace-nowrap">
+                      <Link
+                        to={`/account/${profile.accountId}`}
+                        className="text-gray-900 hover:text-blue-600 hover:underline"
+                      >
+                        {profile.accountName}
+                      </Link>
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-700 whitespace-nowrap">
                       {profile.csm}
