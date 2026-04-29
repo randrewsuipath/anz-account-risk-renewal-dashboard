@@ -18,7 +18,7 @@ const EXPIRY_THRESHOLDS = {
 
 const ROBOT_CAPACITY = {
   HOURS_24X7: 24 * 7 * 30,
-  HOURS_BUSINESS: 8 * 5 * 4,
+  HOURS_BUSINESS: 8 * 5 * 20,
 };
 
 export function calculateUtilizationRisk(utilization: number): RiskLevel {
