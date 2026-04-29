@@ -53,19 +53,19 @@ function generateUnitRecommendation(
 function generateRobotRecommendation(
   robots: RobotUtilization
 ): Recommendation | null {
-  const isLowUtilizationBusiness = robots.utilizationRiskBusiness === 'high' || robots.utilizationRiskBusiness === 'medium';
+  const isLowUtilizationBusiness = robots.utilizationRisk24x7 === 'high' || robots.utilizationRisk24x7 === 'medium';
   const isNearExpiry = robots.expiryRisk === 'high' || robots.expiryRisk === 'medium';
   let message = '';
   let reason = '';
   let priority: 'high' | 'medium' | 'low' = 'low';
   if (isLowUtilizationBusiness && isNearExpiry) {
     priority = 'high';
-    reason = `Business hours utilization: ${Math.round(robots.utilizationBusiness * 100)}%, Expiry: ${robots.daysUntilExpiry} days`;
-    message = 'Critical: Robot capacity significantly underutilized with upcoming expiry. Urgent review needed to assess automation pipeline and renewal strategy.';
+    reason = `24/7 utilization: ${Math.round(robots.utilization24x7 * 100)}%, Expiry: ${robots.daysUntilExpiry} days`;
+    message = 'Critical: Robot capacity significantly underutilized (24/7 model) with upcoming expiry. Urgent review needed to assess automation pipeline and renewal strategy.';
   } else if (isLowUtilizationBusiness) {
     priority = 'high';
-    reason = `Business hours utilization at ${Math.round(robots.utilizationBusiness * 100)}%`;
-    message = 'Robot capacity underutilized during business hours. Review attended automation opportunities and workload distribution across business operations.';
+    reason = `24/7 utilization at ${Math.round(robots.utilization24x7 * 100)}%`;
+    message = 'Robot capacity significantly underutilized (24/7 model). Evaluate automation pipeline, scheduling optimization, and consider workload rebalancing.';
   } else if (isNearExpiry) {
     priority = robots.expiryRisk === 'high' ? 'high' : 'medium';
     reason = `Expiry in ${robots.daysUntilExpiry} days with strong utilization`;

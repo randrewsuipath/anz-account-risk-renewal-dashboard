@@ -33,8 +33,9 @@ export interface UnitUtilization {
 export interface RobotUtilization {
   robots: number;
   monthlyHoursConsumed: number;
+  utilization24x7: number;
   utilizationBusiness: number;
-  utilizationRiskBusiness: RiskLevel;
+  utilizationRisk24x7: RiskLevel;
   expiryDate: string;
   expiryRisk: RiskLevel;
   daysUntilExpiry: number;

@@ -70,15 +70,25 @@ function RobotCard({ robots }: { robots: RobotUtilization }) {
         </div>
         <div>
           <div className="flex items-center justify-between mb-2">
+            <span className="text-xs text-gray-500">24/7 (24/7/30) Utilization</span>
+            <span className="text-sm font-semibold text-gray-900">{isNaN(robots.utilization24x7) || robots.utilization24x7 == null ? '—' : Math.round(robots.utilization24x7 * 100) + '%'}</span>
+          </div>
+          <Progress value={isNaN(robots.utilization24x7) || robots.utilization24x7 == null ? 0 : robots.utilization24x7 * 100} className="h-2" />
+          <div className="flex items-center justify-between mt-1">
+            <span className="text-xs text-gray-400">Capacity: {robots.robots == null ? '—' : (robots.robots * 5040).toLocaleString()} hrs/mo</span>
+            <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium ${getRiskColor(robots.utilizationRisk24x7)}`}>
+              {robots.utilizationRisk24x7.toUpperCase()}
+            </span>
+          </div>
+        </div>
+        <div>
+          <div className="flex items-center justify-between mb-2">
             <span className="text-xs text-gray-500">Business Hours (8/5/20) Utilization</span>
             <span className="text-sm font-semibold text-gray-900">{isNaN(robots.utilizationBusiness) || robots.utilizationBusiness == null ? '—' : Math.round(robots.utilizationBusiness * 100) + '%'}</span>
           </div>
           <Progress value={isNaN(robots.utilizationBusiness) || robots.utilizationBusiness == null ? 0 : robots.utilizationBusiness * 100} className="h-2" />
           <div className="flex items-center justify-between mt-1">
             <span className="text-xs text-gray-400">Capacity: {robots.robots == null ? '—' : (robots.robots * 160).toLocaleString()} hrs/mo</span>
-            <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium ${getRiskColor(robots.utilizationRiskBusiness)}`}>
-              {robots.utilizationRiskBusiness.toUpperCase()}
-            </span>
           </div>
         </div>
         <div className="flex items-center gap-2 text-sm">

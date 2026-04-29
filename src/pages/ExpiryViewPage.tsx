@@ -56,7 +56,7 @@ export function ExpiryViewPage() {
           unitType: 'Robots',
           expiryDate: profile.robots.expiryDate,
           daysUntilExpiry: profile.robots.daysUntilExpiry,
-          utilization: profile.robots.utilizationBusiness,
+          utilization: profile.robots.utilization24x7,
           purchased: profile.robots.robots,
           consumed: profile.robots.monthlyHoursConsumed,
         });
